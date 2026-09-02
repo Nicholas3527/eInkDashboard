@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Ink Portal</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        /* eInk Specific Overrides */
+        body {
+            background-color: #ffffff;
+            color: #000000;
+            -webkit-font-smoothing: none;
+            font-smoothing: none; 
+        }
+        
+        .eink-border { border: 3px solid #000000; }
+        .eink-border-b { border-bottom: 3px solid #000000; }
+        .eink-border-t { border-top: 3px solid #000000; }
+        .eink-border-l { border-left: 3px solid #000000; }
+        .eink-border-r { border-right: 3px solid #000000; }
+        
+        .serif-text { font-family: Georgia, 'Times New Roman', Times, serif; }
+
+        /* Custom scrollbar for eink */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #fff; border-left: 2px solid #000; }
+        ::-webkit-scrollbar-thumb { background: #000; }
+    </style>
+</head>
+<body class="font-sans h-screen flex flex-col overflow-hidden">
+    <div id="root" class="w-full h-full flex flex-col max-w-5xl mx-auto relative"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- Component: Icon Wrapper ---
+        const Icon = ({ name, size = 24, className = "" }) => {
+            const iconRef = React.useRef(null);
+            useEffect(() => {
+                if (iconRef.current && window.lucide) {
+                    iconRef.current.innerHTML = '';
+                    const iconElement = document.createElement('i');
+                    iconElement.setAttribute('data-lucide', name);
+                    iconElement.setAttribute('width', size);
+                    iconElement.setAttribute('height', size);
+                    iconElement.setAttribute('class', className);
+                    iconRef.current.appendChild(iconElement);
+                    window.lucide.createIcons({ root: iconRef.current });
+                }
+            }, [name, size, className]);
+            return <span ref={iconRef} className="inline-flex items-center justify-center"></span>;
+        };
+
+        // --- Component: Top Navigation Bar ---
+        const NavBar = ({ title, onNavigate }) => {
+            return (
+                <div className="eink-border-b p-4 flex justify-between items-center shrink-0 bg-white z-50">
+                    <h1 className="text-2xl font-bold uppercase tracking-widest">{title}</h1>
+                    <button 
+                        onClick={() => onNavigate('/')}
+                        className="eink-border px-4 py-2 font-bold uppercase flex items-center gap-2 hover:bg-black hover:text-white transition-colors"
+                    >
+                        <Icon name="grid" size={20} /> Menu
+                    </button>
+                </div>
+            );
+        };
+
+        // --- Page: Landing Portal ---
+        const LandingPage = ({ onNavigate }) => {
+            const features = [
+                { path: '/dashboard', icon: 'layout-dashboard', title: 'Life Dashboard', desc: 'Time, Weather & Transit' },
+                { path: '/art', icon: 'image', title: 'Digital Art', desc: 'Museum highlights' },
+                { path: '/quote', icon: 'quote', title: 'Daily Wisdom', desc: 'Inspirational quotes' },
+                { path: '/smarthome', icon: 'home', title: 'Smart Home', desc: 'Lights & Locks' }
+            ];
+
+            return (
+                <div className="flex-grow flex flex-col items-center justify-center p-8">
+                    <div className="text-center mb-12">
+                        <h1 className="text-4xl md:text-5xl font-bold uppercase tracking-widest mb-4">Central Hub</h1>
+                        <p className="text-lg uppercase tracking-wider text-gray-700">Select Display Mode</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl">
+                        {features.map((f, i) => (
+                            <div 
+                                key={i} 
+                                onClick={() => onNavigate(f.path)}
+                                className="eink-border p-6 flex flex-col items-center justify-center text-center hover:bg-black hover:text-white transition-colors group cursor-pointer h-48"
+                            >
+                                <Icon name={f.icon} size={48} className="mb-4 group-hover:invert" />
+                                <h2 className="text-2xl font-bold uppercase mb-2">{f.title}</h2>
+                                <p className="font-medium text-sm md:text-base">{f.desc}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Page: Digital Art Frame ---
+        const DigitalArt = () => {
+            const [art, setArt] = useState(null);
+            const [status, setStatus] = useState('fetching'); 
+
+            const fetchArt = async (attempts = 0) => {
+                setStatus('fetching');
+                
+                if (attempts > 5) {
+                    setArt({
+                        imageUrl: "https://images.metmuseum.org/CRDImages/ep/original/DT1567.jpg",
+                        title: "Wheat Field with Cypresses",
+                        artist: "Vincent van Gogh",
+                        date: "1889"
+                    });
+                    setStatus('loading-image');
+                    return;
+                }
+
+                try {
+                    const searchRes = await fetch('https://collectionapi.metmuseum.org/public/collection/v1/search?departmentId=11&hasImages=true&isHighlight=true&q=painting');
+                    const searchData = await searchRes.json();
+                    
+                    if (!searchData.objectIDs || searchData.objectIDs.length === 0) throw new Error("No IDs found");
+
+                    const randomId = searchData.objectIDs[Math.floor(Math.random() * searchData.objectIDs.length)];
+                    const objRes = await fetch(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${randomId}`);
+                    const objData = await objRes.json();
+
+                    if (objData.primaryImageSmall || objData.primaryImage) {
+                        setArt({
+                            imageUrl: objData.primaryImageSmall || objData.primaryImage,
+                            title: objData.title || "Untitled",
+                            artist: objData.artistDisplayName || "Unknown Artist",
+                            date: objData.objectDate || ""
+                        });
+                        setStatus('loading-image'); 
+                    } else {
+                        fetchArt(attempts + 1);
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch art", err);
+                    fetchArt(attempts + 1);
+                }
+            };
+
+            useEffect(() => {
+                fetchArt();
+                const interval = setInterval(fetchArt, 30 * 60 * 1000); 
+                return () => clearInterval(interval);
+            }, []);
+
+            return (
+                <div className="flex-grow flex flex-col p-4 md:p-8 relative h-full">
+                    {status !== 'ready' && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-white z-10 flex-col gap-4">
+                            <div className="font-bold uppercase tracking-widest flex items-center gap-2">
+                                <Icon name="loader-circle" size={24} className="animate-spin" /> 
+                                {status === 'fetching' ? 'Searching Archives...' : 'Painting Canvas...'}
+                            </div>
+                        </div>
+                    )}
+
+                    {art && (
+                        <div className={`flex-grow flex flex-col items-center justify-center transition-opacity duration-500 ${status === 'ready' ? 'opacity-100' : 'opacity-0'} h-full`}>
+                            <div className="flex-grow flex items-center justify-center w-full min-h-0 mb-6 relative">
+                                <img 
+                                    src={art.imageUrl} 
+                                    alt={art.title} 
+                                    onLoad={() => setStatus('ready')}
+                                    onError={() => fetchArt(6)} 
+                                    className="max-w-full max-h-full object-contain filter grayscale contrast-125 eink-border p-2"
+                                />
+                            </div>
+                            <div className="text-center shrink-0">
+                                <h2 className="text-2xl font-bold uppercase tracking-wider mb-2 leading-tight">{art.title}</h2>
+                                <p className="text-lg">
+                                    {art.artist} {art.date && <span className="text-gray-500 italic">({art.date})</span>}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // --- Page: Quote of the Day ---
+        const QuoteOfDay = () => {
+             const [quoteData, setQuoteData] = useState({ content: '', author: '' });
+             const [loading, setLoading] = useState(true);
+
+             const fallbackQuotes = [
+                 { content: "The best time to plant a tree was 20 years ago. The second best time is now.", author: "Chinese Proverb" },
+                 { content: "It is not that we have a short time to live, but that we waste a lot of it.", author: "Seneca" },
+                 { content: "The only limit to our realization of tomorrow will be our doubts of today.", author: "Franklin D. Roosevelt" },
+                 { content: "Do not wait to strike till the iron is hot; but make it hot by striking.", author: "William Butler Yeats" },
+                 { content: "Whether you think you can or you think you can't, you're right.", author: "Henry Ford" },
+                 { content: "Simplicity is the ultimate sophistication.", author: "Leonardo da Vinci" },
+                 { content: "Everything you've ever wanted is on the other side of fear.", author: "George Addair" }
+             ];
+
+             const fetchQuote = async () => {
+                 setLoading(true);
+                 try {
+                     const res = await fetch('https://api.quotable.io/random?tags=inspirational|wisdom');
+                     if (!res.ok) throw new Error("Network response was not ok");
+                     const data = await res.json();
+                     setQuoteData(data);
+                 } catch (err) {
+                     console.error("Quote fetch failed, using local fallback", err);
+                     // Pick a random quote from our local array if the API fails
+                     const randomFallback = fallbackQuotes[Math.floor(Math.random() * fallbackQuotes.length)];
+                     setQuoteData(randomFallback);
+                 }
+                 setLoading(false);
+             };
+
+             useEffect(() => {
+                 fetchQuote();
+                 const interval = setInterval(fetchQuote, 60 * 60 * 1000); 
+                 return () => clearInterval(interval);
+             }, []);
+
+             return (
+                 <div className="flex-grow flex flex-col p-4 md:p-8">
+                     <div className="flex-grow flex items-center justify-center">
+                         {loading ? (
+                             <div className="font-bold uppercase tracking-widest flex items-center gap-2">
+                                <Icon name="loader-circle" size={24} className="animate-spin" /> Gathering wisdom...
+                             </div>
+                         ) : (
+                             <div className="max-w-2xl text-center px-4">
+                                 <Icon name="quote" size={48} className="mx-auto mb-8 text-black opacity-30" />
+                                 <p className="text-3xl md:text-5xl leading-tight serif-text font-medium mb-8">
+                                     "{quoteData.content}"
+                                 </p>
+                                 <p className="text-xl md:text-2xl font-bold uppercase tracking-widest eink-border-b inline-block pb-2">
+                                     {quoteData.author}
+                                 </p>
+                             </div>
+                         )}
+                     </div>
+                 </div>
+             );
+        };
+
+        // --- Utility: WMO Weather Code to Icon & Text ---
+        const getWeatherDetails = (code) => {
+            if (code === 0) return { icon: 'sun', text: 'Clear' };
+            if (code === 1 || code === 2) return { icon: 'cloud-sun', text: 'Partly Cloudy' };
+            if (code === 3) return { icon: 'cloud', text: 'Cloudy' };
+            if (code === 45 || code === 48) return { icon: 'cloud-fog', text: 'Fog' };
+            if (code >= 51 && code <= 67) return { icon: 'cloud-rain', text: 'Rain' };
+            if (code >= 71 && code <= 77) return { icon: 'cloud-snow', text: 'Snow' };
+            if (code >= 95) return { icon: 'cloud-lightning', text: 'Storm' };
+            return { icon: 'cloud', text: 'Unknown' };
+        };
+
+        // --- Component: Clock ---
+        const Clock = () => {
+            const [time, setTime] = useState(new Date());
+
+            useEffect(() => {
+                const now = new Date();
+                const msUntilNextMinute = (60 - now.getSeconds()) * 1000;
+                
+                let interval;
+                const timeout = setTimeout(() => {
+                    setTime(new Date());
+                    interval = setInterval(() => setTime(new Date()), 60000);
+                }, msUntilNextMinute);
+
+                return () => {
+                    clearTimeout(timeout);
+                    clearInterval(interval);
+                };
+            }, []);
+
+            const londonTime = time.toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' });
+            const hkTime = time.toLocaleTimeString('en-GB', { timeZone: 'Asia/Hong_Kong', hour: '2-digit', minute: '2-digit' });
+            const londonDate = time.toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+            return (
+                <div className="eink-border p-4 flex flex-col md:flex-row justify-between items-start md:items-center bg-white shrink-0">
+                    <div>
+                        <div className="text-xl font-bold uppercase tracking-wider mb-1">London</div>
+                        <div className="text-5xl md:text-7xl font-bold leading-none tracking-tighter">{londonTime}</div>
+                        <div className="text-lg md:text-xl mt-2 font-medium">{londonDate}</div>
+                    </div>
+                    <div className="mt-4 md:mt-0 text-right md:eink-border-l md:border-b-0 md:pl-6 eink-border-b border-l-0 pb-4 md:pb-0 w-full md:w-auto">
+                        <div className="text-sm font-bold uppercase tracking-wider mb-1">Hong Kong</div>
+                        <div className="text-3xl md:text-4xl font-bold">{hkTime}</div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Component: Weather ---
+        const Weather = () => {
+            const [hourly, setHourly] = useState([]);
+            const [daily, setDaily] = useState([]);
+            const [loading, setLoading] = useState(true);
+
+            const fetchWeather = async () => {
+                try {
+                    const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=51.5085&longitude=-0.1257&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe%2FLondon');
+                    const data = await res.json();
+                    
+                    const currentHour = new Date().getHours();
+                    const next3Hours = [];
+                    for(let i=0; i<3; i++) {
+                        const targetTime = new Date();
+                        targetTime.setHours(currentHour + i, 0, 0, 0);
+                        const isoString = targetTime.toISOString().substring(0, 16);
+                        
+                        const index = data.hourly.time.findIndex(t => t === isoString);
+                        if(index !== -1) {
+                            next3Hours.push({
+                                time: targetTime.getHours() + ":00",
+                                temp: Math.round(data.hourly.temperature_2m[index]),
+                                code: data.hourly.weathercode[index]
+                            });
+                        }
+                    }
+                    setHourly(next3Hours);
+
+                    const next3Days = [];
+                    for(let i=0; i<3; i++) {
+                        const dateObj = new Date(data.daily.time[i]);
+                        next3Days.push({
+                            day: i === 0 ? 'Today' : dateObj.toLocaleDateString('en-GB', { weekday: 'short' }),
+                            tempMax: Math.round(data.daily.temperature_2m_max[i]),
+                            tempMin: Math.round(data.daily.temperature_2m_min[i]),
+                            code: data.daily.weathercode[i]
+                        });
+                    }
+                    setDaily(next3Days);
+                    setLoading(false);
+                } catch (err) {
+                    console.error("Failed to fetch weather", err);
+                    setLoading(false);
+                }
+            };
+
+            useEffect(() => {
+                fetchWeather();
+                const interval = setInterval(fetchWeather, 30 * 60 * 1000);
+                return () => clearInterval(interval);
+            }, []);
+
+            if (loading) return <div className="eink-border p-4 font-bold text-center shrink-0">Loading Weather...</div>;
+
+            return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0">
+                    <div className="eink-border p-4">
+                        <div className="eink-border-b pb-2 mb-4 font-bold text-lg uppercase flex items-center gap-2">
+                            <Icon name="clock" size={20} /> Next 3 Hours
+                        </div>
+                        <div className="flex justify-between">
+                            {hourly.map((h, i) => (
+                                <div key={i} className="flex flex-col items-center">
+                                    <div className="font-bold text-lg">{h.time}</div>
+                                    <Icon name={getWeatherDetails(h.code).icon} size={32} className="my-2" />
+                                    <div className="text-2xl font-bold">{h.temp}°C</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="eink-border p-4">
+                        <div className="eink-border-b pb-2 mb-4 font-bold text-lg uppercase flex items-center gap-2">
+                            <Icon name="calendar-days" size={20} /> Next 3 Days
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            {daily.map((d, i) => (
+                                <div key={i} className="flex justify-between items-center w-full">
+                                    <div className="font-bold text-lg w-16">{d.day}</div>
+                                    <div className="flex items-center gap-2 w-32">
+                                        <Icon name={getWeatherDetails(d.code).icon} size={24} />
+                                        <span className="text-sm font-medium">{getWeatherDetails(d.code).text}</span>
+                                    </div>
+                                    <div className="font-bold text-lg text-right">
+                                        {d.tempMax}° <span className="text-gray-500 font-normal">/ {d.tempMin}°</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Component: Transport ---
+        const Transport = () => {
+            const [dlr, setDlr] = useState([]);
+            const [elizAbbey, setElizAbbey] = useState([]);
+            const [elizWestbound, setElizWestbound] = useState([]);
+            const [loading, setLoading] = useState(true);
+
+            const DLR_ID = '940GZZDLWLA'; 
+            const ELIZABETH_ID = '910GWOLWXR';
+
+            const fetchTransport = async () => {
+                try {
+                    const [dlrRes, elizRes] = await Promise.all([
+                        fetch(`https://api.tfl.gov.uk/StopPoint/${DLR_ID}/Arrivals`),
+                        fetch(`https://api.tfl.gov.uk/StopPoint/${ELIZABETH_ID}/Arrivals`)
+                    ]);
+                    
+                    const dlrData = await dlrRes.json();
+                    const elizData = await elizRes.json();
+
+                    const processArrivals = (data, filterFn = () => true) => data
+                        .filter(filterFn)
+                        .sort((a, b) => a.timeToStation - b.timeToStation)
+                        .slice(0, 3)
+                        .map(item => {
+                            const arrivalTime = item.expectedArrival 
+                                ? new Date(item.expectedArrival) 
+                                : new Date(Date.now() + (item.timeToStation * 1000));
+                                
+                            const timeString = arrivalTime.toLocaleTimeString('en-GB', { 
+                                timeZone: 'Europe/London', 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                            });
+
+                            return {
+                                destination: item.destinationName.replace(' DLR Station', '').replace(' Rail Station', ''),
+                                time: timeString
+                            };
+                        });
+
+                    setDlr(processArrivals(dlrData));
+                    setElizAbbey(processArrivals(elizData, item => item.destinationName.includes('Abbey Wood')));
+                    setElizWestbound(processArrivals(elizData, item => !item.destinationName.includes('Abbey Wood')));
+                    
+                    setLoading(false);
+                } catch (err) {
+                    console.error("Failed to fetch transport", err);
+                    setLoading(false);
+                }
+            };
+
+            useEffect(() => {
+                fetchTransport();
+                const interval = setInterval(fetchTransport, 2 * 60 * 1000); 
+                return () => clearInterval(interval);
+            }, []);
+
+            if (loading) return <div className="eink-border p-4 font-bold text-center shrink-0">Loading Transit...</div>;
+
+            const renderArrivals = (title, stationName, data, direction = null) => (
+                <div className="eink-border p-4 w-full flex flex-col">
+                    <div className="eink-border-b pb-2 mb-3 flex flex-col min-h-[6.5rem]">
+                        <div className="font-bold text-lg uppercase flex items-start justify-between mb-2 gap-2">
+                            <div className="flex items-start gap-1.5">
+                                <Icon name="train-front" size={20} className="mt-0.5 shrink-0" />
+                                <span className="leading-tight">{title}</span>
+                            </div>
+                            {stationName && !stationName.includes('Woolwich') && (
+                                <span className="text-[11px] sm:text-xs font-normal bg-black text-white px-2 py-1 text-right shrink-0 leading-tight max-w-[50%] break-words">
+                                    {stationName}
+                                </span>
+                            )}
+                        </div>
+                        <div className="mt-auto">
+                            {direction && (
+                                <div className="text-sm font-bold bg-gray-200 px-2 py-1 inline-block border border-black">
+                                    {direction}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    {data.length === 0 ? (
+                        <div className="text-center py-4 font-bold italic flex-grow">No upcoming trains</div>
+                    ) : (
+                        <div className="flex flex-col gap-3 flex-grow">
+                            {data.map((train, i) => (
+                                <div key={i} className="flex justify-between items-center text-lg">
+                                    <div className="font-bold truncate pr-2">{train.destination || 'Check Front'}</div>
+                                    <div className="font-bold whitespace-nowrap">{train.time}</div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+
+            return (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0 pb-8">
+                    {renderArrivals("DLR", "Woolwich Arsenal", dlr)}
+                    {renderArrivals("Elizabeth Line", "Woolwich", elizAbbey, "Eastbound (Abbey Wood)")}
+                    {renderArrivals("Elizabeth Line", "Woolwich", elizWestbound, "Westbound (Central)")}
+                </div>
+            );
+        };
+
+        // --- Page: Dashboard ---
+        const Dashboard = () => (
+             <div className="flex-grow p-4 md:p-8 flex flex-col gap-6 overflow-y-auto">
+                 <Clock />
+                 <Weather />
+                 <Transport />
+             </div>
+        );
+
+        // --- Page: Smart Home (Placeholder) ---
+        const SmartHome = () => (
+             <div className="flex-grow flex items-center justify-center p-8">
+                 <div className="text-center">
+                     <Icon name="home" size={64} className="mx-auto mb-6 opacity-30" />
+                     <h2 className="text-3xl font-bold uppercase mb-4">Smart Home</h2>
+                     <p className="text-lg mb-8 max-w-md mx-auto">
+                         Connect to Home Assistant or SmartThings API to control your local environment.
+                     </p>
+                     <div className="eink-border p-4 bg-gray-100 italic">
+                         Placeholder for device toggles and sensors.
+                     </div>
+                 </div>
+             </div>
+        );
+
+        // --- Main App ---
+        const App = () => {
+            const [currentPath, setCurrentPath] = useState('/');
+
+            // Route matching logic
+            let content = <LandingPage onNavigate={setCurrentPath} />;
+            if (currentPath === '/dashboard') {
+                content = (
+                    <>
+                        <NavBar title="Dashboard" onNavigate={setCurrentPath} />
+                        <Dashboard />
+                    </>
+                );
+            } else if (currentPath === '/art') {
+                content = (
+                    <>
+                        <NavBar title="Digital Art" onNavigate={setCurrentPath} />
+                        <DigitalArt />
+                    </>
+                );
+            } else if (currentPath === '/quote') {
+                content = (
+                    <>
+                        <NavBar title="Daily Wisdom" onNavigate={setCurrentPath} />
+                        <QuoteOfDay />
+                    </>
+                );
+            } else if (currentPath === '/smarthome') {
+                content = (
+                    <>
+                        <NavBar title="Smart Home" onNavigate={setCurrentPath} />
+                        <SmartHome />
+                    </>
+                );
+            }
+
+            return (
+                <div className="flex flex-col w-full h-full bg-white">
+                    {content}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
