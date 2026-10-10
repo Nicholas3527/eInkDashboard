@@ -3,494 +3,350 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Ink Portal</title>
+    <title>Kindle Portal</title>
     
     <style>
-        *, *::before, *::after { box-sizing: border-box; }
+        /* CSS 2.1 compliance - absolutely no modern Flex/Grid if possible */
         body {
             background-color: #ffffff;
             color: #000000;
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            -webkit-font-smoothing: none;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            height: 100%;
+            overflow-x: hidden;
         }
 
-        .uppercase { text-transform: uppercase; }
-        .font-bold { font-weight: bold; }
+        .border-box { border: 2px solid #000; padding: 10px; margin: 10px; }
+        .header-bar { border-bottom: 4px solid #000; padding: 10px; text-align: center; font-weight: bold; font-size: 24px; text-transform: uppercase; }
+        .btn-menu { float: left; border: 2px solid #000; padding: 5px 15px; text-decoration: none; color: #000; font-size: 16px; margin-top: -5px; }
+        
+        .page { display: none; padding: 20px; }
+        .page-active { display: block; }
+        
         .text-center { text-align: center; }
         .text-right { text-align: right; }
-        .italic { font-style: italic; }
-        .serif-text { font-family: Georgia, 'Times New Roman', Times, serif; }
+        .font-bold { font-weight: bold; }
+        .uppercase { text-transform: uppercase; }
         
-        .text-xs { font-size: 0.75rem; }
-        .text-sm { font-size: 0.875rem; }
-        .text-base { font-size: 1rem; }
-        .text-lg { font-size: 1.125rem; }
-        .text-xl { font-size: 1.25rem; }
-        .text-2xl { font-size: 1.5rem; }
-        .text-3xl { font-size: 1.875rem; }
-        .text-4xl { font-size: 2.25rem; }
-        .text-5xl { font-size: 3rem; }
-        .text-7xl { font-size: 4.5rem; }
+        .grid-half { width: 45%; float: left; margin: 2%; box-sizing: border-box; }
+        .grid-third { width: 31%; float: left; margin: 1%; box-sizing: border-box; }
+        .clear { clear: both; }
 
-        .flex { display: flex; }
-        .flex-col { flex-direction: column; }
-        .items-center { align-items: center; }
-        .items-start { align-items: flex-start; }
-        .justify-center { justify-content: center; }
-        .justify-between { justify-content: space-between; }
-        .w-full { width: 100%; }
-        .h-full { height: 100%; }
-        .flex-grow { flex-grow: 1; }
-        .shrink-0 { flex-shrink: 0; }
-        .max-w-5xl { max-width: 64rem; margin-left: auto; margin-right: auto; }
-        
-        .p-4 { padding: 1rem; }
-        .p-8 { padding: 2rem; }
-        .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
-        .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
-        .px-4 { padding-left: 1rem; padding-right: 1rem; }
-        .mb-2 { margin-bottom: 0.5rem; }
-        .mb-3 { margin-bottom: 0.75rem; }
-        .mb-4 { margin-bottom: 1rem; }
-        .mb-6 { margin-bottom: 1.5rem; }
-        .mb-8 { margin-bottom: 2rem; }
-        .mt-2 { margin-top: 0.5rem; }
-        .mt-4 { margin-top: 1rem; }
-        .mt-auto { margin-top: auto; }
-        .gap-2 { gap: 0.5rem; }
-        .gap-4 { gap: 1rem; }
-        .gap-6 { gap: 1.5rem; }
-
-        .grid { display: grid; }
-        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-        @media (min-width: 768px) {
-            .md-grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            .md-grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-            .md-flex-row { flex-direction: row; }
-        }
-
-        .eink-border { border: 3px solid #000000; }
-        .eink-border-b { border-bottom: 3px solid #000000; }
-        .eink-border-l { border-left: 3px solid #000000; }
-        .bg-black { background-color: #000000; color: #ffffff; }
-        .bg-gray { background-color: #e5e5e5; color: #000000; }
-        .bg-white { background-color: #ffffff; }
-        
-        .card-btn {
-            cursor: pointer;
-            text-decoration: none;
-            color: inherit;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+        .menu-item {
+            display: block;
+            border: 3px solid #000;
             text-align: center;
-            height: 180px;
+            padding: 40px 10px;
+            margin-bottom: 20px;
+            text-decoration: none;
+            color: #000;
         }
-
-        .page { display: none; flex-direction: column; height: 100%; width: 100%; overflow-y: auto; }
-        .page.active { display: flex; }
-        .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .menu-item-title { font-size: 28px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; }
         
-        .art-img {
-            max-width: 100%;
-            max-height: 60vh;
-            object-fit: contain;
-            filter: grayscale(100%) contrast(125%);
-            padding: 8px;
-        }
+        /* Dashboard specific */
+        .clock-large { font-size: 80px; font-weight: bold; line-height: 1; margin: 10px 0; }
+        .clock-small { font-size: 30px; font-weight: bold; }
+        .transit-row { border-bottom: 1px solid #ccc; padding: 10px 0; font-size: 18px; }
+        
+        /* Art specific */
+        .art-img { max-width: 100%; max-height: 600px; display: block; margin: 0 auto; filter: grayscale(100%); }
     </style>
 </head>
 <body>
-    <div id="nav-bar" class="eink-border-b p-4 flex justify-between items-center" style="display: none; background: #fff; z-index: 50; flex-shrink: 0;">
-        <h1 id="nav-title" class="text-2xl font-bold uppercase">Portal</h1>
-        <a href="#" onclick="navigateTo('landing'); return false;" class="eink-border px-4 py-2 font-bold uppercase flex items-center gap-2" style="text-decoration: none; color: black;">
-            Menu
-        </a>
+
+    <div id="top-nav" style="display:none;" class="header-bar">
+        <a href="#" onclick="showPage('landing'); return false;" class="btn-menu">MENU</a>
+        <span id="page-title">Portal</span>
     </div>
 
-    <div id="page-landing" class="page p-8 items-center justify-center">
-        <div class="text-center mb-12">
-            <h1 class="text-4xl font-bold uppercase mb-4">Central Hub</h1>
-            <p class="text-lg uppercase">Select Display Mode</p>
+    <!-- LANDING PAGE -->
+    <div id="page-landing" class="page page-active">
+        <div class="text-center" style="margin-bottom: 40px; margin-top: 20px;">
+            <div style="font-size: 40px; font-weight: bold; text-transform: uppercase;">Central Hub</div>
+            <div style="font-size: 18px;">Select Display Mode</div>
         </div>
-        <div class="grid grid-cols-1 md-grid-cols-2 gap-6 w-full max-w-5xl">
-            <a href="#" onclick="navigateTo('dashboard'); return false;" class="eink-border p-6 card-btn">
-                <h2 class="text-2xl font-bold uppercase mb-2">Life Dashboard</h2>
-                <p>Time, Weather & Transit</p>
-            </a>
-            <a href="#" onclick="navigateTo('art'); return false;" class="eink-border p-6 card-btn">
-                <h2 class="text-2xl font-bold uppercase mb-2">Digital Art</h2>
-                <p>Museum highlights</p>
-            </a>
-            <a href="#" onclick="navigateTo('quote'); return false;" class="eink-border p-6 card-btn">
-                <h2 class="text-2xl font-bold uppercase mb-2">Daily Wisdom</h2>
-                <p>Inspirational quotes</p>
-            </a>
-            <a href="#" onclick="navigateTo('smarthome'); return false;" class="eink-border p-6 card-btn">
-                <h2 class="text-2xl font-bold uppercase mb-2">Smart Home</h2>
-                <p>Lights & Locks</p>
-            </a>
-        </div>
-        <footer class="mt-auto pt-8 text-center text-sm font-bold uppercase">
-            System Version 1.2.0 • Kindle Legacy Edition
-        </footer>
-    </div>
-
-    <div id="page-dashboard" class="page p-4 md:p-8 max-w-5xl" style="margin: 0 auto;">
         
-        <div class="eink-border p-4 flex flex-col md-flex-row justify-between items-start md:items-center bg-white mb-6 w-full shrink-0">
-            <div>
-                <div class="text-xl font-bold uppercase mb-1">London</div>
-                <div id="london-time" class="text-5xl md:text-7xl font-bold" style="line-height: 1; letter-spacing: -2px;">--:--</div>
-                <div id="london-date" class="text-lg md:text-xl mt-2 font-bold">Loading date...</div>
+        <div>
+            <div class="grid-half">
+                <a href="#" onclick="showPage('dashboard'); return false;" class="menu-item">
+                    <div class="menu-item-title">Dashboard</div>
+                    <div>Time, Weather & Transit</div>
+                </a>
+                <a href="#" onclick="showPage('quote'); return false;" class="menu-item">
+                    <div class="menu-item-title">Daily Quote</div>
+                    <div>Wisdom & Inspiration</div>
+                </a>
             </div>
-            <div class="mt-4 md:mt-0 text-right md:eink-border-l md:border-b-0 md:pl-6 eink-border-b border-l-0 pb-4 md:pb-0 w-full md:w-auto">
-                <div class="text-sm font-bold uppercase mb-1">Hong Kong</div>
-                <div id="hk-time" class="text-3xl md:text-4xl font-bold">--:--</div>
+            <div class="grid-half">
+                <a href="#" onclick="showPage('art'); return false;" class="menu-item">
+                    <div class="menu-item-title">Digital Art</div>
+                    <div>Museum Archives</div>
+                </a>
+                <a href="#" class="menu-item" style="border-color: #aaa; color: #aaa;">
+                    <div class="menu-item-title">Smart Home</div>
+                    <div>(Placeholder)</div>
+                </a>
             </div>
-        </div>
-
-        <div class="grid grid-cols-1 md-grid-cols-2 gap-6 w-full mb-6 shrink-0">
-            <div class="eink-border p-4">
-                <div class="eink-border-b pb-2 mb-4 font-bold text-lg uppercase">Next 3 Hours</div>
-                <div id="weather-hourly" class="flex justify-between text-center">Loading...</div>
-            </div>
-            <div class="eink-border p-4">
-                <div class="eink-border-b pb-2 mb-4 font-bold text-lg uppercase">Next 3 Days</div>
-                <div id="weather-daily" class="flex flex-col gap-2">Loading...</div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md-grid-cols-3 gap-6 w-full pb-8 shrink-0">
-            <div class="eink-border p-4 flex flex-col">
-                <div class="eink-border-b pb-2 mb-3 flex flex-col" style="min-height: 6rem;">
-                    <div class="font-bold text-lg uppercase flex items-start justify-between mb-2">
-                        <span>DLR</span>
-                        <span class="text-xs font-normal bg-black px-2 py-1 text-right">Arsenal</span>
-                    </div>
-                </div>
-                <div id="transit-dlr" class="flex flex-col gap-3 flex-grow">Loading...</div>
-            </div>
-            
-            <div class="eink-border p-4 flex flex-col">
-                <div class="eink-border-b pb-2 mb-3 flex flex-col" style="min-height: 6rem;">
-                    <div class="font-bold text-lg uppercase flex items-start justify-between mb-2">
-                        <span>Elizabeth Line</span>
-                    </div>
-                    <div class="mt-auto">
-                        <span class="text-sm font-bold bg-gray px-2 py-1 eink-border inline-block">Eastbound (Abbey Wood)</span>
-                    </div>
-                </div>
-                <div id="transit-eliz-east" class="flex flex-col gap-3 flex-grow">Loading...</div>
-            </div>
-            
-            <div class="eink-border p-4 flex flex-col">
-                <div class="eink-border-b pb-2 mb-3 flex flex-col" style="min-height: 6rem;">
-                    <div class="font-bold text-lg uppercase flex items-start justify-between mb-2">
-                        <span>Elizabeth Line</span>
-                    </div>
-                    <div class="mt-auto">
-                        <span class="text-sm font-bold bg-gray px-2 py-1 eink-border inline-block">Westbound (Central)</span>
-                    </div>
-                </div>
-                <div id="transit-eliz-west" class="flex flex-col gap-3 flex-grow">Loading...</div>
-            </div>
+            <div class="clear"></div>
         </div>
     </div>
 
-    <div id="page-art" class="page p-4 items-center justify-center">
-        <div id="art-loading" class="font-bold text-xl uppercase mb-4 text-center p-8">Searching Archives...</div>
-        <div id="art-content" style="display: none; text-align: center; width: 100%;">
-            <img id="art-img" class="art-img eink-border" src="" alt="Artwork">
-            <h2 id="art-title" class="text-2xl font-bold uppercase mt-4 mb-2"></h2>
-            <p id="art-artist" class="text-lg"></p>
+    <!-- DASHBOARD PAGE -->
+    <div id="page-dashboard" class="page">
+        <div class="border-box">
+            <div style="float:left; width: 60%;">
+                <div class="uppercase font-bold">London</div>
+                <div id="clock-lon" class="clock-large">--:--</div>
+                <div id="date-lon" style="font-size: 20px;">--</div>
+            </div>
+            <div style="float:right; width: 35%; text-align: right; border-left: 2px solid #000; padding-left: 10px;">
+                <div class="uppercase font-bold">Hong Kong</div>
+                <div id="clock-hk" class="clock-small">--:--</div>
+            </div>
+            <div class="clear"></div>
+        </div>
+
+        <div class="border-box" style="margin-top: 20px;">
+            <div class="uppercase font-bold" style="border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 10px;">London Weather</div>
+            <div id="weather-content" style="font-size: 24px; padding: 10px;">Loading weather...</div>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <div class="grid-third border-box" style="margin: 0; width: 32%;">
+                <div class="uppercase font-bold" style="border-bottom: 2px solid #000; margin-bottom: 10px;">DLR <span style="font-size:12px;">(Arsenal)</span></div>
+                <div id="transit-dlr">Loading...</div>
+            </div>
+            <div class="grid-third border-box" style="margin: 0 2%; width: 32%;">
+                <div class="uppercase font-bold" style="border-bottom: 2px solid #000; margin-bottom: 10px;">Elizabeth <span style="font-size:12px;">(East)</span></div>
+                <div id="transit-eliz-east">Loading...</div>
+            </div>
+            <div class="grid-third border-box" style="margin: 0; width: 32%;">
+                <div class="uppercase font-bold" style="border-bottom: 2px solid #000; margin-bottom: 10px;">Elizabeth <span style="font-size:12px;">(West)</span></div>
+                <div id="transit-eliz-west">Loading...</div>
+            </div>
+            <div class="clear"></div>
         </div>
     </div>
 
-    <div id="page-quote" class="page p-8 flex-col items-center justify-center">
-        <div id="quote-loading" class="font-bold text-xl uppercase tracking-widest">Gathering wisdom...</div>
-        <div id="quote-content" class="max-w-4xl text-center px-4" style="display: none;">
-            <p id="quote-text" class="text-3xl md:text-5xl serif-text font-bold mb-8" style="line-height: 1.4;"></p>
-            <p id="quote-author" class="text-xl md:text-2xl font-bold uppercase tracking-widest eink-border-b inline-block pb-2"></p>
+    <!-- ART PAGE -->
+    <div id="page-art" class="page">
+        <div id="art-loading" class="text-center font-bold" style="font-size: 24px; padding: 50px;">Fetching Canvas...</div>
+        <div id="art-content" style="display:none; text-align: center;">
+            <img id="art-image" class="art-img" src="" alt="Art" />
+            <div id="art-title" class="font-bold" style="font-size: 28px; margin-top: 20px;"></div>
+            <div id="art-artist" style="font-size: 20px; margin-top: 5px;"></div>
         </div>
     </div>
 
-    <div id="page-smarthome" class="page p-8 items-center justify-center">
-        <h2 class="text-3xl font-bold uppercase mb-4">Smart Home</h2>
-        <p class="text-lg mb-8 max-w-5xl text-center">Placeholder for Home Assistant integration.</p>
+    <!-- QUOTE PAGE -->
+    <div id="page-quote" class="page">
+        <div id="quote-loading" class="text-center font-bold" style="font-size: 24px; padding: 50px;">Gathering Wisdom...</div>
+        <div id="quote-content" style="display:none; padding: 40px; text-align: center;">
+            <div id="quote-text" style="font-family: Georgia, serif; font-size: 40px; font-weight: bold; margin-bottom: 30px; line-height: 1.4;"></div>
+            <div id="quote-author" class="uppercase font-bold" style="font-size: 24px; border-bottom: 2px solid #000; display: inline-block; padding-bottom: 5px;"></div>
+        </div>
     </div>
 
     <script>
-        // Use ES5 JavaScript only (var, standard functions) for Kindle compatibility.
-        
-        var activeIntervals = [];
-        var activeTimeouts = [];
+        // STRICT ES3 JAVASCRIPT - NO LET, CONST, ARROW FUNCTIONS, OR TEMPLATE STRINGS
 
-        function clearAllBackgroundTasks() {
-            for (var i = 0; i < activeIntervals.length; i++) { clearInterval(activeIntervals[i]); }
-            for (var j = 0; j < activeTimeouts.length; j++) { clearTimeout(activeTimeouts[j]); }
-            activeIntervals = [];
-            activeTimeouts = [];
-        }
-
-        // --- Custom Legacy Fetch (AJAX) ---
-        // Replaces modern fetch() API which is not supported on old Kindles.
-        function legacyFetch(url, callback, errorCallback) {
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', url, true);
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === 4) {
-                    if (xhr.status === 200) {
-                        try {
-                            var data = JSON.parse(xhr.responseText);
-                            callback(data);
-                        } catch (e) {
-                            if (errorCallback) errorCallback(e);
-                        }
-                    } else {
-                        if (errorCallback) errorCallback("HTTP Error " + xhr.status);
-                    }
-                }
-            };
-            xhr.onerror = function(e) { if (errorCallback) errorCallback(e); };
-            xhr.send();
-        }
-
-        // --- Router Logic ---
-        function navigateTo(pageId) {
-            clearAllBackgroundTasks();
-            
+        // Utility: Page Router
+        function showPage(pageId) {
+            // Hide all pages
             var pages = document.querySelectorAll('.page');
-            for (var i = 0; i < pages.length; i++) { pages[i].classList.remove('active'); }
+            for (var i = 0; i < pages.length; i++) {
+                pages[i].style.display = 'none';
+            }
             
-            var targetPage = document.getElementById('page-' + pageId);
-            if (targetPage) { targetPage.classList.add('active'); } 
-            else { document.getElementById('page-landing').classList.add('active'); pageId = 'landing'; }
+            // Show target page
+            var target = document.getElementById('page-' + pageId);
+            if (target) { target.style.display = 'block'; }
             
-            var navBar = document.getElementById('nav-bar');
-            var navTitle = document.getElementById('nav-title');
-            
-            if (pageId === 'landing') { navBar.style.display = 'none'; } 
-            else {
-                navBar.style.display = 'flex';
-                navTitle.innerText = pageId.charAt(0).toUpperCase() + pageId.slice(1); 
+            // Handle Top Nav
+            var topNav = document.getElementById('top-nav');
+            if (pageId === 'landing') {
+                topNav.style.display = 'none';
+            } else {
+                topNav.style.display = 'block';
+                document.getElementById('page-title').innerHTML = pageId.toUpperCase();
             }
 
-            if (pageId === 'dashboard') initDashboard();
-            if (pageId === 'art') initArt();
-            if (pageId === 'quote') initQuote();
+            // Trigger Scripts
+            if (pageId === 'dashboard') { initDashboard(); }
+            if (pageId === 'art') { fetchArt(); }
+            if (pageId === 'quote') { fetchQuote(); }
         }
 
-        window.onload = function() { navigateTo('landing'); };
+        // Utility: Basic AJAX request wrapper
+        function makeRequest(url, callback, errorCallback) {
+            try {
+                var xhr = new XMLHttpRequest();
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200) {
+                            try {
+                                var data = JSON.parse(xhr.responseText);
+                                callback(data);
+                            } catch (e) {
+                                if (errorCallback) errorCallback("Parse error");
+                            }
+                        } else {
+                            if (errorCallback) errorCallback("HTTP error " + xhr.status);
+                        }
+                    }
+                };
+                xhr.open("GET", url, true);
+                xhr.send();
+            } catch (err) {
+                if (errorCallback) errorCallback("Network error");
+            }
+        }
 
+        // --- DASHBOARD LOGIC ---
         function updateClock() {
             var now = new Date();
-            var londonOpts = { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false };
-            var hkOpts = { timeZone: 'Asia/Hong_Kong', hour: '2-digit', minute: '2-digit', hour12: false };
-            var dateOpts = { timeZone: 'Europe/London', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+            var lOpts = { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false };
+            var hOpts = { timeZone: 'Asia/Hong_Kong', hour: '2-digit', minute: '2-digit', hour12: false };
             
-            document.getElementById('london-time').innerText = now.toLocaleTimeString('en-GB', londonOpts);
-            document.getElementById('hk-time').innerText = now.toLocaleTimeString('en-GB', hkOpts);
-            document.getElementById('london-date').innerText = now.toLocaleDateString('en-GB', dateOpts);
-        }
-
-        function syncClockToMinute() {
-            updateClock();
-            var now = new Date();
-            var msUntilNextMinute = (60 - now.getSeconds()) * 1000;
-            var timeoutId = setTimeout(function() {
-                updateClock();
-                activeIntervals.push(setInterval(updateClock, 60000));
-            }, msUntilNextMinute);
-            activeTimeouts.push(timeoutId);
+            try {
+                // toLocaleTimeString might fail on extremely old devices if timeZone is not supported
+                document.getElementById('clock-lon').innerHTML = now.toLocaleTimeString('en-GB', lOpts);
+                document.getElementById('clock-hk').innerHTML = now.toLocaleTimeString('en-GB', hOpts);
+                document.getElementById('date-lon').innerHTML = now.toDateString();
+            } catch (e) {
+                // Fallback for browsers without timeZone support
+                var h = now.getHours(); var m = now.getMinutes();
+                document.getElementById('clock-lon').innerHTML = (h<10?'0':'') + h + ":" + (m<10?'0':'') + m;
+                document.getElementById('clock-hk').innerHTML = "Unsupported";
+            }
         }
 
         function fetchWeather() {
-            var url = 'https://api.open-meteo.com/v1/forecast?latitude=51.5085&longitude=-0.1257&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe%2FLondon';
-            legacyFetch(url, function(data) {
-                var currentHour = new Date().getHours();
-                var hourlyHtml = '';
-                
-                for(var i=0; i<3; i++) {
-                    var targetTime = new Date();
-                    targetTime.setHours(currentHour + i, 0, 0, 0);
-                    var isoString = targetTime.toISOString().substring(0, 16);
-                    var index = data.hourly.time.indexOf(isoString);
-                    
-                    if(index !== -1) {
-                        var temp = Math.round(data.hourly.temperature_2m[index]);
-                        var timeStr = targetTime.getHours() + ":00";
-                        hourlyHtml += '<div class="flex flex-col items-center"><div class="font-bold text-lg">' + timeStr + '</div><div class="text-2xl font-bold mt-2">' + temp + '°C</div></div>';
-                    }
+            makeRequest('https://api.open-meteo.com/v1/forecast?latitude=51.5085&longitude=-0.1257&current_weather=true', function(data) {
+                if(data && data.current_weather) {
+                    var temp = Math.round(data.current_weather.temperature);
+                    document.getElementById('weather-content').innerHTML = "Current Temp: " + temp + "&deg;C";
                 }
-                document.getElementById('weather-hourly').innerHTML = hourlyHtml;
-
-                var dailyHtml = '';
-                for(var j=0; j<3; j++) {
-                    var dateObj = new Date(data.daily.time[j]);
-                    var dayName = j === 0 ? 'Today' : dateObj.toLocaleDateString('en-GB', { weekday: 'short' });
-                    var tempMax = Math.round(data.daily.temperature_2m_max[j]);
-                    var tempMin = Math.round(data.daily.temperature_2m_min[j]);
-                    dailyHtml += '<div class="flex justify-between items-center w-full"><div class="font-bold text-lg">' + dayName + '</div><div class="font-bold text-lg text-right">' + tempMax + '° <span style="color: #666; font-weight: normal;">/ ' + tempMin + '°</span></div></div>';
-                }
-                document.getElementById('weather-daily').innerHTML = dailyHtml;
-            }, function(err) {
-                document.getElementById('weather-hourly').innerHTML = "Error loading";
-                document.getElementById('weather-daily').innerHTML = "Error loading";
+            }, function() {
+                document.getElementById('weather-content').innerHTML = "Weather Unavailable";
             });
         }
 
-        function renderTransportList(data, containerId) {
-            var container = document.getElementById(containerId);
+        function renderTransport(containerId, data) {
+            var html = "";
             if (data.length === 0) {
-                container.innerHTML = '<div class="text-center py-4 font-bold italic">No upcoming trains</div>';
-                return;
+                html = "<div class='transit-row'>No trains</div>";
+            } else {
+                for (var i = 0; i < Math.min(3, data.length); i++) {
+                    var min = Math.floor(data[i].timeToStation / 60);
+                    var dest = data[i].destinationName.replace(' DLR Station', '').replace(' Rail Station', '');
+                    // Shorten destination name if it's too long
+                    if(dest.length > 15) dest = dest.substring(0, 13) + "..";
+                    html += "<div class='transit-row'><b>" + dest + "</b> <span style='float:right'>" + min + "m</span><div class='clear'></div></div>";
+                }
             }
-            var html = '';
-            for (var i = 0; i < Math.min(3, data.length); i++) {
-                var train = data[i];
-                html += '<div class="flex justify-between items-center text-lg"><div class="font-bold truncate pr-2">' + (train.destination || 'Check Front') + '</div><div class="font-bold whitespace-nowrap">' + train.time + '</div></div>';
-            }
-            container.innerHTML = html;
+            document.getElementById(containerId).innerHTML = html;
         }
 
         function fetchTransport() {
             var DLR_ID = '940GZZDLWLA'; 
             var ELIZABETH_ID = '910GWOLWXR';
             
-            // Nested callbacks since Promises aren't safe on old Kindles
-            legacyFetch('https://api.tfl.gov.uk/StopPoint/' + DLR_ID + '/Arrivals', function(dlrData) {
-                legacyFetch('https://api.tfl.gov.uk/StopPoint/' + ELIZABETH_ID + '/Arrivals', function(elizData) {
-                    function process(rawData) {
-                        var sorted = rawData.sort(function(a, b) { return a.timeToStation - b.timeToStation; });
-                        var processed = [];
-                        for (var i=0; i<sorted.length; i++) {
-                            var item = sorted[i];
-                            var arrivalTime = item.expectedArrival ? new Date(item.expectedArrival) : new Date(Date.now() + (item.timeToStation * 1000));
-                            var timeStr = arrivalTime.toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false });
-                            var dest = item.destinationName.replace(' DLR Station', '').replace(' Rail Station', '');
-                            processed.push({ destination: dest, time: timeStr });
-                        }
-                        return processed;
-                    }
+            makeRequest('https://api.tfl.gov.uk/StopPoint/' + DLR_ID + '/Arrivals', function(data) {
+                var sorted = data.sort(function(a,b) { return a.timeToStation - b.timeToStation; });
+                renderTransport('transit-dlr', sorted);
+            }, function() { document.getElementById('transit-dlr').innerHTML = "Error"; });
 
-                    var processedDlr = process(dlrData);
-                    var processedEliz = process(elizData);
-                    
-                    var elizEast = [];
-                    var elizWest = [];
-                    for(var e=0; e<processedEliz.length; e++){
-                        if(processedEliz[e].destination.indexOf('Abbey Wood') !== -1) elizEast.push(processedEliz[e]);
-                        else elizWest.push(processedEliz[e]);
-                    }
-
-                    renderTransportList(processedDlr, 'transit-dlr');
-                    renderTransportList(elizEast, 'transit-eliz-east');
-                    renderTransportList(elizWest, 'transit-eliz-west');
-                });
+            makeRequest('https://api.tfl.gov.uk/StopPoint/' + ELIZABETH_ID + '/Arrivals', function(data) {
+                var sorted = data.sort(function(a,b) { return a.timeToStation - b.timeToStation; });
+                
+                var east = []; var west = [];
+                for(var i=0; i<sorted.length; i++) {
+                    if (sorted[i].destinationName.indexOf('Abbey Wood') !== -1) { east.push(sorted[i]); } 
+                    else { west.push(sorted[i]); }
+                }
+                
+                renderTransport('transit-eliz-east', east);
+                renderTransport('transit-eliz-west', west);
+            }, function() { 
+                document.getElementById('transit-eliz-east').innerHTML = "Error";
+                document.getElementById('transit-eliz-west').innerHTML = "Error";
             });
         }
 
+        var clockInterval, tflInterval, weatherInterval;
         function initDashboard() {
-            syncClockToMinute();
-            fetchWeather();
-            activeIntervals.push(setInterval(fetchWeather, 30 * 60000));
-            fetchTransport();
-            activeIntervals.push(setInterval(fetchTransport, 2 * 60000));
+            updateClock(); fetchWeather(); fetchTransport();
+            clearInterval(clockInterval); clearInterval(tflInterval); clearInterval(weatherInterval);
+            clockInterval = setInterval(updateClock, 60000);
+            weatherInterval = setInterval(fetchWeather, 1800000); // 30 mins
+            tflInterval = setInterval(fetchTransport, 120000); // 2 mins
         }
 
-        var artFetchCount = 0;
+        // --- ART LOGIC ---
+        function applyArtFallback() {
+            document.getElementById('art-loading').style.display = 'none';
+            document.getElementById('art-content').style.display = 'block';
+            var img = document.getElementById('art-image');
+            img.onerror = null;
+            img.src = "https://images.metmuseum.org/CRDImages/ep/original/DT1567.jpg";
+            document.getElementById('art-title').innerHTML = "Wheat Field with Cypresses";
+            document.getElementById('art-artist').innerHTML = "Vincent van Gogh";
+        }
+
         function fetchArt() {
-            var loadingDiv = document.getElementById('art-loading');
-            var contentDiv = document.getElementById('art-content');
-            var imgEl = document.getElementById('art-img');
-            
-            loadingDiv.style.display = 'block';
-            loadingDiv.innerText = 'Searching Archives...';
-            contentDiv.style.display = 'none';
-            artFetchCount++;
+            document.getElementById('art-loading').style.display = 'block';
+            document.getElementById('art-content').style.display = 'none';
 
-            function applyFallback() {
-                imgEl.onerror = null; 
-                imgEl.onload = function() {
-                    loadingDiv.style.display = 'none';
-                    contentDiv.style.display = 'block';
-                };
-                imgEl.src = "https://images.metmuseum.org/CRDImages/ep/original/DT1567.jpg";
-                document.getElementById('art-title').innerText = "Wheat Field with Cypresses";
-                document.getElementById('art-artist').innerText = "Vincent van Gogh (1889)";
-                artFetchCount = 0;
-            }
-
-            if (artFetchCount > 4) { return applyFallback(); }
-
-            legacyFetch('https://collectionapi.metmuseum.org/public/collection/v1/search?departmentId=11&hasImages=true&isHighlight=true&q=painting', function(searchData) {
-                if (!searchData.objectIDs) return setTimeout(fetchArt, 1000);
-                var randomId = searchData.objectIDs[Math.floor(Math.random() * searchData.objectIDs.length)];
-                
-                legacyFetch('https://collectionapi.metmuseum.org/public/collection/v1/objects/' + randomId, function(objData) {
-                    var imgUrl = objData.primaryImageSmall || objData.primaryImage;
-                    if (imgUrl) {
-                        loadingDiv.innerText = 'Painting Canvas...';
-                        imgEl.onload = function() {
-                            loadingDiv.style.display = 'none';
-                            contentDiv.style.display = 'block';
-                            artFetchCount = 0;
-                        };
-                        imgEl.onerror = function() { setTimeout(fetchArt, 1000); }; 
-                        imgEl.src = imgUrl;
-                        document.getElementById('art-title').innerText = objData.title || "Untitled";
-                        document.getElementById('art-artist').innerText = (objData.artistDisplayName || "Unknown") + (objData.objectDate ? " (" + objData.objectDate + ")" : "");
-                    } else { setTimeout(fetchArt, 1000); }
-                }, function() { setTimeout(fetchArt, 1000); });
-            }, function() { setTimeout(fetchArt, 1000); });
+            makeRequest('https://collectionapi.metmuseum.org/public/collection/v1/search?departmentId=11&hasImages=true&isHighlight=true&q=painting', function(searchData) {
+                if (searchData.objectIDs && searchData.objectIDs.length > 0) {
+                    var randomId = searchData.objectIDs[Math.floor(Math.random() * searchData.objectIDs.length)];
+                    makeRequest('https://collectionapi.metmuseum.org/public/collection/v1/objects/' + randomId, function(objData) {
+                        var imgUrl = objData.primaryImageSmall || objData.primaryImage;
+                        if (imgUrl) {
+                            var img = document.getElementById('art-image');
+                            img.onload = function() {
+                                document.getElementById('art-loading').style.display = 'none';
+                                document.getElementById('art-content').style.display = 'block';
+                            };
+                            img.onerror = applyArtFallback;
+                            img.src = imgUrl;
+                            document.getElementById('art-title').innerHTML = objData.title || "Untitled";
+                            document.getElementById('art-artist').innerHTML = objData.artistDisplayName || "Unknown Artist";
+                        } else { applyArtFallback(); }
+                    }, applyArtFallback);
+                } else { applyArtFallback(); }
+            }, applyArtFallback);
         }
 
-        function initArt() {
-            artFetchCount = 0;
-            fetchArt();
-            activeIntervals.push(setInterval(fetchArt, 30 * 60000));
-        }
-
-        var fallbackQuotes = [
-            { content: "The best time to plant a tree was 20 years ago. The second best time is now.", author: "Chinese Proverb" },
-            { content: "It is not that we have a short time to live, but that we waste a lot of it.", author: "Seneca" },
-            { content: "Simplicity is the ultimate sophistication.", author: "Leonardo da Vinci" }
+        // --- QUOTE LOGIC ---
+        var fallbacks = [
+            { text: "The best time to plant a tree was 20 years ago. The second best time is now.", author: "Chinese Proverb" },
+            { text: "It is not that we have a short time to live, but that we waste a lot of it.", author: "Seneca" },
+            { text: "Simplicity is the ultimate sophistication.", author: "Leonardo da Vinci" }
         ];
 
         function fetchQuote() {
-            var loadingDiv = document.getElementById('quote-loading');
-            var contentDiv = document.getElementById('quote-content');
-            
-            loadingDiv.style.display = 'block';
-            contentDiv.style.display = 'none';
+            document.getElementById('quote-loading').style.display = 'block';
+            document.getElementById('quote-content').style.display = 'none';
 
-            function applyQuote(text, author) {
-                document.getElementById('quote-text').innerText = '"' + text + '"';
-                document.getElementById('quote-author').innerText = author;
-                loadingDiv.style.display = 'none';
-                contentDiv.style.display = 'block';
-            }
-
-            legacyFetch('https://api.quotable.io/random?tags=inspirational|wisdom', function(data) {
-                applyQuote(data.content, data.author);
+            makeRequest('https://api.quotable.io/random?tags=inspirational|wisdom', function(data) {
+                if(data && data.content) {
+                    document.getElementById('quote-loading').style.display = 'none';
+                    document.getElementById('quote-content').style.display = 'block';
+                    document.getElementById('quote-text').innerHTML = '"' + data.content + '"';
+                    document.getElementById('quote-author').innerHTML = data.author;
+                } else { throw new Error(); }
             }, function() {
-                var fb = fallbackQuotes[Math.floor(Math.random() * fallbackQuotes.length)];
-                applyQuote(fb.content, fb.author);
+                var f = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+                document.getElementById('quote-loading').style.display = 'none';
+                document.getElementById('quote-content').style.display = 'block';
+                document.getElementById('quote-text').innerHTML = '"' + f.text + '"';
+                document.getElementById('quote-author').innerHTML = f.author;
             });
         }
-
-        function initQuote() {
-            fetchQuote();
-            activeIntervals.push(setInterval(fetchQuote, 60 * 60000));
-        }
+        
     </script>
 </body>
 </html>
