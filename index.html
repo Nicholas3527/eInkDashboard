@@ -20,7 +20,6 @@
             overflow: hidden;
         }
 
-        /* Typography */
         .uppercase { text-transform: uppercase; }
         .font-bold { font-weight: bold; }
         .text-center { text-align: center; }
@@ -83,7 +82,6 @@
         .bg-gray { background-color: #e5e5e5; color: #000000; }
         .bg-white { background-color: #ffffff; }
         
-        /* Interactive Cards */
         .card-btn {
             cursor: pointer;
             text-decoration: none;
@@ -96,13 +94,10 @@
             height: 180px;
         }
 
-        /* Page Handling */
         .page { display: none; flex-direction: column; height: 100%; width: 100%; overflow-y: auto; }
         .page.active { display: flex; }
-        
         .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        /* Art Image Filter */
         .art-img {
             max-width: 100%;
             max-height: 60vh;
@@ -113,7 +108,6 @@
     </style>
 </head>
 <body>
-
     <div id="nav-bar" class="eink-border-b p-4 flex justify-between items-center" style="display: none; background: #fff; z-index: 50; flex-shrink: 0;">
         <h1 id="nav-title" class="text-2xl font-bold uppercase">Portal</h1>
         <a href="#" onclick="navigateTo('landing'); return false;" class="eink-border px-4 py-2 font-bold uppercase flex items-center gap-2" style="text-decoration: none; color: black;">
@@ -145,13 +139,12 @@
             </a>
         </div>
         <footer class="mt-auto pt-8 text-center text-sm font-bold uppercase">
-            System Version 1.1.0 • Solid State Edition
+            System Version 1.2.0 • Kindle Legacy Edition
         </footer>
     </div>
 
     <div id="page-dashboard" class="page p-4 md:p-8 max-w-5xl" style="margin: 0 auto;">
         
-        <!-- Clock Module -->
         <div class="eink-border p-4 flex flex-col md-flex-row justify-between items-start md:items-center bg-white mb-6 w-full shrink-0">
             <div>
                 <div class="text-xl font-bold uppercase mb-1">London</div>
@@ -164,7 +157,6 @@
             </div>
         </div>
 
-        <!-- Weather Module -->
         <div class="grid grid-cols-1 md-grid-cols-2 gap-6 w-full mb-6 shrink-0">
             <div class="eink-border p-4">
                 <div class="eink-border-b pb-2 mb-4 font-bold text-lg uppercase">Next 3 Hours</div>
@@ -176,9 +168,7 @@
             </div>
         </div>
 
-        <!-- Transport Module -->
         <div class="grid grid-cols-1 md-grid-cols-3 gap-6 w-full pb-8 shrink-0">
-            <!-- DLR -->
             <div class="eink-border p-4 flex flex-col">
                 <div class="eink-border-b pb-2 mb-3 flex flex-col" style="min-height: 6rem;">
                     <div class="font-bold text-lg uppercase flex items-start justify-between mb-2">
@@ -188,7 +178,7 @@
                 </div>
                 <div id="transit-dlr" class="flex flex-col gap-3 flex-grow">Loading...</div>
             </div>
-            <!-- Eliz East -->
+            
             <div class="eink-border p-4 flex flex-col">
                 <div class="eink-border-b pb-2 mb-3 flex flex-col" style="min-height: 6rem;">
                     <div class="font-bold text-lg uppercase flex items-start justify-between mb-2">
@@ -200,7 +190,7 @@
                 </div>
                 <div id="transit-eliz-east" class="flex flex-col gap-3 flex-grow">Loading...</div>
             </div>
-            <!-- Eliz West -->
+            
             <div class="eink-border p-4 flex flex-col">
                 <div class="eink-border-b pb-2 mb-3 flex flex-col" style="min-height: 6rem;">
                     <div class="font-bold text-lg uppercase flex items-start justify-between mb-2">
@@ -238,8 +228,8 @@
     </div>
 
     <script>
-        // GLOBAL MEMORY MANAGER
-        // We store intervals here so they can be ruthlessly destroyed upon page navigation.
+        // Use ES5 JavaScript only (var, standard functions) for Kindle compatibility.
+        
         var activeIntervals = [];
         var activeTimeouts = [];
 
@@ -250,60 +240,55 @@
             activeTimeouts = [];
         }
 
+        // --- Custom Legacy Fetch (AJAX) ---
+        // Replaces modern fetch() API which is not supported on old Kindles.
+        function legacyFetch(url, callback, errorCallback) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try {
+                            var data = JSON.parse(xhr.responseText);
+                            callback(data);
+                        } catch (e) {
+                            if (errorCallback) errorCallback(e);
+                        }
+                    } else {
+                        if (errorCallback) errorCallback("HTTP Error " + xhr.status);
+                    }
+                }
+            };
+            xhr.onerror = function(e) { if (errorCallback) errorCallback(e); };
+            xhr.send();
+        }
+
         // --- Router Logic ---
         function navigateTo(pageId) {
-            clearAllBackgroundTasks(); // Stop old data fetching to save Kindle memory
+            clearAllBackgroundTasks();
             
-            // Hide all pages
             var pages = document.querySelectorAll('.page');
-            for (var i = 0; i < pages.length; i++) {
-                pages[i].classList.remove('active');
-            }
+            for (var i = 0; i < pages.length; i++) { pages[i].classList.remove('active'); }
             
-            // Show target page
             var targetPage = document.getElementById('page-' + pageId);
-            if (targetPage) {
-                targetPage.classList.add('active');
-            } else {
-                document.getElementById('page-landing').classList.add('active');
-                pageId = 'landing';
-            }
+            if (targetPage) { targetPage.classList.add('active'); } 
+            else { document.getElementById('page-landing').classList.add('active'); pageId = 'landing'; }
             
-            // Manage top nav bar
             var navBar = document.getElementById('nav-bar');
             var navTitle = document.getElementById('nav-title');
             
-            if (pageId === 'landing') {
-                navBar.style.display = 'none';
-            } else {
+            if (pageId === 'landing') { navBar.style.display = 'none'; } 
+            else {
                 navBar.style.display = 'flex';
-                // Format title string (e.g. "dashboard" -> "Dashboard")
                 navTitle.innerText = pageId.charAt(0).toUpperCase() + pageId.slice(1); 
             }
 
-            // Initialize specific page logic
             if (pageId === 'dashboard') initDashboard();
             if (pageId === 'art') initArt();
             if (pageId === 'quote') initQuote();
         }
 
-        // Initialize router on load
-        window.addEventListener('DOMContentLoaded', function() {
-            navigateTo('landing');
-        });
-
-        // --- Fail-Safe Memory Flush ---
-        // Forces a complete browser reload at 3:00 AM every night to keep Kindle RAM clean.
-        function scheduleNightlyRestart() {
-            var now = new Date();
-            var night = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 3, 0, 0);
-            if (now.getTime() > night.getTime()) {
-                night.setDate(night.getDate() + 1); // Tomorrow at 3am
-            }
-            var timeToMidnight = night.getTime() - now.getTime();
-            setTimeout(function() { window.location.reload(true); }, timeToMidnight);
-        }
-        scheduleNightlyRestart();
+        window.onload = function() { navigateTo('landing'); };
 
         function updateClock() {
             var now = new Date();
@@ -329,8 +314,7 @@
 
         function fetchWeather() {
             var url = 'https://api.open-meteo.com/v1/forecast?latitude=51.5085&longitude=-0.1257&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe%2FLondon';
-            
-            fetch(url).then(function(res) { return res.json(); }).then(function(data) {
+            legacyFetch(url, function(data) {
                 var currentHour = new Date().getHours();
                 var hourlyHtml = '';
                 
@@ -343,10 +327,7 @@
                     if(index !== -1) {
                         var temp = Math.round(data.hourly.temperature_2m[index]);
                         var timeStr = targetTime.getHours() + ":00";
-                        hourlyHtml += '<div class="flex flex-col items-center">' +
-                            '<div class="font-bold text-lg">' + timeStr + '</div>' +
-                            '<div class="text-2xl font-bold mt-2">' + temp + '°C</div>' +
-                            '</div>';
+                        hourlyHtml += '<div class="flex flex-col items-center"><div class="font-bold text-lg">' + timeStr + '</div><div class="text-2xl font-bold mt-2">' + temp + '°C</div></div>';
                     }
                 }
                 document.getElementById('weather-hourly').innerHTML = hourlyHtml;
@@ -357,14 +338,10 @@
                     var dayName = j === 0 ? 'Today' : dateObj.toLocaleDateString('en-GB', { weekday: 'short' });
                     var tempMax = Math.round(data.daily.temperature_2m_max[j]);
                     var tempMin = Math.round(data.daily.temperature_2m_min[j]);
-                    
-                    dailyHtml += '<div class="flex justify-between items-center w-full">' +
-                        '<div class="font-bold text-lg">' + dayName + '</div>' +
-                        '<div class="font-bold text-lg text-right">' + tempMax + '° <span style="color: #666; font-weight: normal;">/ ' + tempMin + '°</span></div>' +
-                        '</div>';
+                    dailyHtml += '<div class="flex justify-between items-center w-full"><div class="font-bold text-lg">' + dayName + '</div><div class="font-bold text-lg text-right">' + tempMax + '° <span style="color: #666; font-weight: normal;">/ ' + tempMin + '°</span></div></div>';
                 }
                 document.getElementById('weather-daily').innerHTML = dailyHtml;
-            }).catch(function(err) {
+            }, function(err) {
                 document.getElementById('weather-hourly').innerHTML = "Error loading";
                 document.getElementById('weather-daily').innerHTML = "Error loading";
             });
@@ -376,14 +353,10 @@
                 container.innerHTML = '<div class="text-center py-4 font-bold italic">No upcoming trains</div>';
                 return;
             }
-            
             var html = '';
             for (var i = 0; i < Math.min(3, data.length); i++) {
                 var train = data[i];
-                html += '<div class="flex justify-between items-center text-lg">' +
-                    '<div class="font-bold truncate pr-2">' + (train.destination || 'Check Front') + '</div>' +
-                    '<div class="font-bold whitespace-nowrap">' + train.time + '</div>' +
-                    '</div>';
+                html += '<div class="flex justify-between items-center text-lg"><div class="font-bold truncate pr-2">' + (train.destination || 'Check Front') + '</div><div class="font-bold whitespace-nowrap">' + train.time + '</div></div>';
             }
             container.innerHTML = html;
         }
@@ -391,58 +364,46 @@
         function fetchTransport() {
             var DLR_ID = '940GZZDLWLA'; 
             var ELIZABETH_ID = '910GWOLWXR';
-
-            Promise.all([
-                fetch('https://api.tfl.gov.uk/StopPoint/' + DLR_ID + '/Arrivals').then(function(res){ return res.json(); }),
-                fetch('https://api.tfl.gov.uk/StopPoint/' + ELIZABETH_ID + '/Arrivals').then(function(res){ return res.json(); })
-            ]).then(function(results) {
-                var dlrData = results[0];
-                var elizData = results[1];
-
-                function process(rawData) {
-                    var sorted = rawData.sort(function(a, b) { return a.timeToStation - b.timeToStation; });
-                    var processed = [];
-                    for (var i=0; i<sorted.length; i++) {
-                        var item = sorted[i];
-                        var arrivalTime = item.expectedArrival ? new Date(item.expectedArrival) : new Date(Date.now() + (item.timeToStation * 1000));
-                        var timeStr = arrivalTime.toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false });
-                        var dest = item.destinationName.replace(' DLR Station', '').replace(' Rail Station', '');
-                        processed.push({ destination: dest, time: timeStr });
+            
+            // Nested callbacks since Promises aren't safe on old Kindles
+            legacyFetch('https://api.tfl.gov.uk/StopPoint/' + DLR_ID + '/Arrivals', function(dlrData) {
+                legacyFetch('https://api.tfl.gov.uk/StopPoint/' + ELIZABETH_ID + '/Arrivals', function(elizData) {
+                    function process(rawData) {
+                        var sorted = rawData.sort(function(a, b) { return a.timeToStation - b.timeToStation; });
+                        var processed = [];
+                        for (var i=0; i<sorted.length; i++) {
+                            var item = sorted[i];
+                            var arrivalTime = item.expectedArrival ? new Date(item.expectedArrival) : new Date(Date.now() + (item.timeToStation * 1000));
+                            var timeStr = arrivalTime.toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false });
+                            var dest = item.destinationName.replace(' DLR Station', '').replace(' Rail Station', '');
+                            processed.push({ destination: dest, time: timeStr });
+                        }
+                        return processed;
                     }
-                    return processed;
-                }
 
-                var processedDlr = process(dlrData);
-                var processedEliz = process(elizData);
-                
-                var elizEast = [];
-                var elizWest = [];
-                for(var e=0; e<processedEliz.length; e++){
-                    if(processedEliz[e].destination.indexOf('Abbey Wood') !== -1) {
-                        elizEast.push(processedEliz[e]);
-                    } else {
-                        elizWest.push(processedEliz[e]);
+                    var processedDlr = process(dlrData);
+                    var processedEliz = process(elizData);
+                    
+                    var elizEast = [];
+                    var elizWest = [];
+                    for(var e=0; e<processedEliz.length; e++){
+                        if(processedEliz[e].destination.indexOf('Abbey Wood') !== -1) elizEast.push(processedEliz[e]);
+                        else elizWest.push(processedEliz[e]);
                     }
-                }
 
-                renderTransportList(processedDlr, 'transit-dlr');
-                renderTransportList(elizEast, 'transit-eliz-east');
-                renderTransportList(elizWest, 'transit-eliz-west');
-            }).catch(function(err) {
-                renderTransportList([], 'transit-dlr');
-                renderTransportList([], 'transit-eliz-east');
-                renderTransportList([], 'transit-eliz-west');
+                    renderTransportList(processedDlr, 'transit-dlr');
+                    renderTransportList(elizEast, 'transit-eliz-east');
+                    renderTransportList(elizWest, 'transit-eliz-west');
+                });
             });
         }
 
         function initDashboard() {
             syncClockToMinute();
-            
             fetchWeather();
-            activeIntervals.push(setInterval(fetchWeather, 30 * 60000)); // 30 mins
-            
+            activeIntervals.push(setInterval(fetchWeather, 30 * 60000));
             fetchTransport();
-            activeIntervals.push(setInterval(fetchTransport, 2 * 60000)); // 2 mins
+            activeIntervals.push(setInterval(fetchTransport, 2 * 60000));
         }
 
         var artFetchCount = 0;
@@ -454,11 +415,9 @@
             loadingDiv.style.display = 'block';
             loadingDiv.innerText = 'Searching Archives...';
             contentDiv.style.display = 'none';
-            
             artFetchCount++;
 
             function applyFallback() {
-                // Ensure we only attach the onload once, and remove the onerror so it doesn't loop
                 imgEl.onerror = null; 
                 imgEl.onload = function() {
                     loadingDiv.style.display = 'none';
@@ -467,75 +426,43 @@
                 imgEl.src = "https://images.metmuseum.org/CRDImages/ep/original/DT1567.jpg";
                 document.getElementById('art-title').innerText = "Wheat Field with Cypresses";
                 document.getElementById('art-artist').innerText = "Vincent van Gogh (1889)";
-                artFetchCount = 0; // Reset for the next scheduled interval
+                artFetchCount = 0;
             }
 
-            // CRITICAL FIX: Hard limit on retries to prevent infinite loops and browser crashes
-            if (artFetchCount > 4) {
-                console.warn("Art fetch failed 4 times. Applying fallback.");
-                return applyFallback(); 
-            }
+            if (artFetchCount > 4) { return applyFallback(); }
 
-            var searchUrl = 'https://collectionapi.metmuseum.org/public/collection/v1/search?departmentId=11&hasImages=true&isHighlight=true&q=painting';
-            
-            fetch(searchUrl)
-                .then(function(res) { 
-                    if (!res.ok) throw new Error("Search API Error");
-                    return res.json(); 
-                })
-                .then(function(searchData) {
-                    if (!searchData.objectIDs) throw new Error("No IDs");
-                    var randomId = searchData.objectIDs[Math.floor(Math.random() * searchData.objectIDs.length)];
-                    return fetch('https://collectionapi.metmuseum.org/public/collection/v1/objects/' + randomId);
-                })
-                .then(function(objRes) { 
-                    if (!objRes.ok) throw new Error("Object API Error");
-                    return objRes.json(); 
-                })
-                .then(function(objData) {
+            legacyFetch('https://collectionapi.metmuseum.org/public/collection/v1/search?departmentId=11&hasImages=true&isHighlight=true&q=painting', function(searchData) {
+                if (!searchData.objectIDs) return setTimeout(fetchArt, 1000);
+                var randomId = searchData.objectIDs[Math.floor(Math.random() * searchData.objectIDs.length)];
+                
+                legacyFetch('https://collectionapi.metmuseum.org/public/collection/v1/objects/' + randomId, function(objData) {
                     var imgUrl = objData.primaryImageSmall || objData.primaryImage;
                     if (imgUrl) {
                         loadingDiv.innerText = 'Painting Canvas...';
-                        
                         imgEl.onload = function() {
                             loadingDiv.style.display = 'none';
                             contentDiv.style.display = 'block';
-                            artFetchCount = 0; // Success! Reset count.
+                            artFetchCount = 0;
                         };
-                        
-                        // If the specific image link is dead, try again, but it's bound by the counter
-                        imgEl.onerror = function() { 
-                            console.warn("Dead image link, retrying...");
-                            fetchArt(); 
-                        }; 
-                        
+                        imgEl.onerror = function() { setTimeout(fetchArt, 1000); }; 
                         imgEl.src = imgUrl;
                         document.getElementById('art-title').innerText = objData.title || "Untitled";
-                        var dateStr = objData.objectDate ? " (" + objData.objectDate + ")" : "";
-                        document.getElementById('art-artist').innerText = (objData.artistDisplayName || "Unknown Artist") + dateStr;
-                    } else {
-                        throw new Error("No image URL in object data");
-                    }
-                })
-                .catch(function(err) {
-                    console.error("Art fetch error:", err);
-                    // Add a tiny delay to prevent the loop from running too fast if API is rejecting requests
-                    setTimeout(fetchArt, 1000); 
-                });
+                        document.getElementById('art-artist').innerText = (objData.artistDisplayName || "Unknown") + (objData.objectDate ? " (" + objData.objectDate + ")" : "");
+                    } else { setTimeout(fetchArt, 1000); }
+                }, function() { setTimeout(fetchArt, 1000); });
+            }, function() { setTimeout(fetchArt, 1000); });
         }
 
         function initArt() {
-            artFetchCount = 0; // Reset on page load
+            artFetchCount = 0;
             fetchArt();
-            activeIntervals.push(setInterval(fetchArt, 30 * 60000)); // 30 mins
+            activeIntervals.push(setInterval(fetchArt, 30 * 60000));
         }
 
         var fallbackQuotes = [
             { content: "The best time to plant a tree was 20 years ago. The second best time is now.", author: "Chinese Proverb" },
             { content: "It is not that we have a short time to live, but that we waste a lot of it.", author: "Seneca" },
-            { content: "Simplicity is the ultimate sophistication.", author: "Leonardo da Vinci" },
-            { content: "The only limit to our realization of tomorrow will be our doubts of today.", author: "Franklin D. Roosevelt" },
-            { content: "Do what you can, with what you have, where you are.", author: "Theodore Roosevelt" }
+            { content: "Simplicity is the ultimate sophistication.", author: "Leonardo da Vinci" }
         ];
 
         function fetchQuote() {
@@ -552,25 +479,18 @@
                 contentDiv.style.display = 'block';
             }
 
-            fetch('https://api.quotable.io/random?tags=inspirational|wisdom')
-                .then(function(res) { 
-                    if(!res.ok) throw new Error("API Error");
-                    return res.json(); 
-                })
-                .then(function(data) {
-                    applyQuote(data.content, data.author);
-                })
-                .catch(function(err) {
-                    var fb = fallbackQuotes[Math.floor(Math.random() * fallbackQuotes.length)];
-                    applyQuote(fb.content, fb.author);
-                });
+            legacyFetch('https://api.quotable.io/random?tags=inspirational|wisdom', function(data) {
+                applyQuote(data.content, data.author);
+            }, function() {
+                var fb = fallbackQuotes[Math.floor(Math.random() * fallbackQuotes.length)];
+                applyQuote(fb.content, fb.author);
+            });
         }
 
         function initQuote() {
             fetchQuote();
-            activeIntervals.push(setInterval(fetchQuote, 60 * 60000)); // 1 hour
+            activeIntervals.push(setInterval(fetchQuote, 60 * 60000));
         }
-
     </script>
 </body>
 </html>
