@@ -211,7 +211,7 @@
     <!-- TOP NAVIGATION -->
     <div id="nav-bar">
         <h1 id="nav-title">PORTAL</h1>
-        <span class="app-ver" style="float:right; margin:12px 15px 0 0; font-size:12px; font-weight:bold;">v2.3.1</span>
+        <span class="app-ver" style="float:right; margin:12px 15px 0 0; font-size:12px; font-weight:bold;">v2.4</span>
         <a id="nav-button" href="#" onclick="navigateTo('landing'); return false;">MENU</a>
         <div class="clear"></div>
     </div>
@@ -265,7 +265,7 @@
         </div>
         
         <div class="text-center mt-8 pt-8 font-bold uppercase" style="font-size: 12px;">
-            System <span class="app-ver">v2.3.1</span> • Ultra-Legacy Edition
+            System <span class="app-ver">v2.4</span> • Ultra-Legacy Edition
         </div>
     </div>
 
@@ -347,7 +347,7 @@
                 <div class="ls-label">Right Now</div>
                 <div id="ls-weather-temp" class="ls-time">--&deg;</div>
             </div></div>
-            <div class="ls-ver app-ver">v2.3.1</div>
+            <div class="ls-ver app-ver">v2.4</div>
         </div>
 
         <!-- RIGHT: TWO BOXES, HALF HEIGHT EACH -->
@@ -392,7 +392,7 @@
     <!-- LEGACY JAVASCRIPT -->
     <script>
         // GLOBALS
-        var APP_VERSION = 'v2.3.1';  // bump on every change; shown on all pages
+        var APP_VERSION = 'v2.4';  // bump on every change; shown on all pages
         var activeIntervals = [];
         var activeTimeouts = [];
         
@@ -647,27 +647,48 @@
         }
 
         // ART
+        // Artworks are bundled in /art (Met Museum open access / public domain), so no remote host can break the page
+        var artworks = [
+            {f: 'art/art1.jpg', t: 'Wheat Field with Cypresses', a: 'Vincent van Gogh'},
+            {f: 'art/art2.jpg', t: 'The Great Wave off Kanagawa', a: 'Katsushika Hokusai'},
+            {f: 'art/art3.jpg', t: 'Young Woman with a Water Pitcher', a: 'Johannes Vermeer'},
+            {f: 'art/art4.jpg', t: 'The Spanish Singer', a: '\u00c9douard Manet'},
+            {f: 'art/art5.jpg', t: 'The Dance Class', a: 'Edgar Degas'}
+        ];
+        var artIndex = -1;
+
         function fetchArt() {
             var loading = document.getElementById('art-loading');
             var content = document.getElementById('art-content');
             var img = document.getElementById('art-img');
-            
+
+            // Pick a different piece each time the page is opened
+            var next;
+            do { next = Math.floor(Math.random() * artworks.length); } while (next === artIndex && artworks.length > 1);
+            artIndex = next;
+            var art = artworks[artIndex];
+
+            loading.innerHTML = 'Loading Archives...';
             loading.style.display = 'block';
             content.style.display = 'none';
-            
-            // Hardcode fallback to ensure something always displays
-            function doFallback() {
-                img.onload = function() {
-                    loading.style.display = 'none';
-                    content.style.display = 'block';
-                };
-                img.src = 'https://images.metmuseum.org/CRDImages/ep/original/DT1567.jpg';
-                document.getElementById('art-title').innerHTML = "Wheat Field with Cypresses";
-                document.getElementById('art-artist').innerHTML = "Vincent van Gogh";
-            }
 
-            // Using hardcoded reliable endpoints to prevent looping errors
-            doFallback();
+            // Size to the real screen (no vh on old Kindle WebKit)
+            var sh = window.innerHeight || document.documentElement.clientHeight || 800;
+            img.style.maxHeight = Math.round(sh * 0.7) + 'px';
+
+            document.getElementById('art-title').innerHTML = art.t;
+            document.getElementById('art-artist').innerHTML = art.a;
+            img.onload = function() {
+                loading.style.display = 'none';
+                content.style.display = 'block';
+            };
+            img.onerror = function() {
+                loading.innerHTML = 'Image unavailable';
+                content.style.display = 'block';
+                img.style.display = 'none';
+            };
+            img.style.display = 'block';
+            img.src = art.f;
         }
         function initArt() { fetchArt(); }
 
