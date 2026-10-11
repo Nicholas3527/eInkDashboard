@@ -158,35 +158,43 @@
             background-color: #ffffff;
         }
         #page-landscape.active { display: block; }
+        /* Landscape is sized in em; layoutLandscape() sets the base font-size from the real screen width */
+        #page-landscape { font-size: 16px; }
         .ls-col-left {
             float: left;
-            width: 50%;
+            width: 44%;
             height: 100%;
-            border-right: 3px solid #000000;
+            border-right: 0.2em solid #000000;
             box-sizing: border-box;
-            padding: 20px;
+            padding: 1em 1.2em;
+            text-align: center;
+            position: relative;
         }
         .ls-col-right {
             float: right;
-            width: 50%;
+            width: 56%;
             height: 100%;
             box-sizing: border-box;
-            padding: 20px;
+            padding: 1em 1.2em;
             position: relative;
         }
-        .ls-ver {
-            position: absolute;
-            bottom: 8px;
-            left: 12px;
-            font-size: 12px;
-            font-weight: bold;
-        }
+        .ls-label { font-size: 1.5em; font-weight: bold; text-transform: uppercase; }
+        .ls-time { font-size: 7.6em; font-weight: bold; line-height: 1; }
+        .ls-date { font-size: 1.8em; font-weight: bold; margin-top: 0.2em; }
+        .ls-hk { font-size: 2em; font-weight: bold; margin-top: 0.5em; padding-top: 0.4em; border-top: 0.12em solid #000000; }
+        .ls-temp { font-size: 6em; font-weight: bold; line-height: 1; }
+        .ls-box { border: 0.2em solid #000000; padding: 0.6em 0.8em; margin-bottom: 0.8em; }
+        .ls-box-head { border-bottom: 0.15em solid #000000; padding-bottom: 0.3em; margin-bottom: 0.5em; font-size: 2em; font-weight: bold; text-transform: uppercase; }
+        .ls-tag { float: right; font-size: 0.55em; padding: 0.2em 0.6em; margin-top: 0.3em; }
+        .ls-box .transit-row { font-size: 1.9em; margin-bottom: 0.3em; }
+        .ls-ver { position: absolute; bottom: 0.5em; left: 0.8em; font-size: 0.8em; font-weight: bold; }
         .ls-menu-btn {
             position: absolute;
-            bottom: 20px;
-            right: 20px;
-            border: 3px solid #000000;
-            padding: 10px 20px;
+            bottom: 1em;
+            right: 1.2em;
+            border: 0.15em solid #000000;
+            padding: 0.4em 1em;
+            font-size: 1.3em;
             font-weight: bold;
             text-transform: uppercase;
             text-decoration: none;
@@ -200,7 +208,7 @@
     <!-- TOP NAVIGATION -->
     <div id="nav-bar">
         <h1 id="nav-title">PORTAL</h1>
-        <span class="app-ver" style="float:right; margin:12px 15px 0 0; font-size:12px; font-weight:bold;">v2.1</span>
+        <span class="app-ver" style="float:right; margin:12px 15px 0 0; font-size:12px; font-weight:bold;">v2.2</span>
         <a id="nav-button" href="#" onclick="navigateTo('landing'); return false;">MENU</a>
         <div class="clear"></div>
     </div>
@@ -253,7 +261,7 @@
         </div>
         
         <div class="text-center mt-8 pt-8 font-bold uppercase" style="font-size: 12px;">
-            System <span class="app-ver">v2.1</span> • Ultra-Legacy Edition
+            System <span class="app-ver">v2.2</span> • Ultra-Legacy Edition
         </div>
     </div>
 
@@ -323,45 +331,25 @@
     <div id="page-landscape" class="page">
         <!-- LEFT: CLOCK & WEATHER -->
         <div class="ls-col-left">
-            <div class="eink-border-b pb-4 mb-4 text-center">
-                <div class="uppercase font-bold text-xl mb-2">London</div>
-                <div id="ls-london-time" style="font-size: 110px; font-weight: bold; line-height: 1;">--:--</div>
-                <div id="ls-london-date" class="font-bold mt-2 text-2xl">Loading...</div>
-                
-                <div class="mt-8 pt-4" style="border-top: 2px solid #000;">
-                    <span class="uppercase font-bold text-xl">HK Time: </span>
-                    <span id="ls-hk-time" style="font-size: 28px; font-weight: bold;">--:--</span>
-                </div>
-            </div>
-
-            <div class="ls-ver app-ver">v2.1</div>
-            <div class="text-center pt-4">
-                <div class="uppercase font-bold text-xl mb-4">Right Now</div>
-                <div id="ls-weather-temp" style="font-size: 80px; font-weight: bold; line-height: 1;">--°</div>
-            </div>
+            <div class="ls-label">London</div>
+            <div id="ls-london-time" class="ls-time">--:--</div>
+            <div id="ls-london-date" class="ls-date">Loading...</div>
+            <div class="ls-hk">HK <span id="ls-hk-time">--:--</span></div>
+            <div class="ls-label" style="margin-top: 0.8em;">Right Now</div>
+            <div id="ls-weather-temp" class="ls-temp">--&deg;</div>
+            <div class="ls-ver app-ver">v2.2</div>
         </div>
-        
+
         <!-- RIGHT: TRANSIT -->
         <div class="ls-col-right">
-            <div class="eink-border p-4 mb-4">
-                <div class="eink-border-b pb-2 mb-4">
-                    <span class="font-bold text-2xl uppercase">DLR</span>
-                    <span class="font-bold text-sm bg-black float-right px-2 py-2 mt-2">Arsenal</span>
-                    <div class="clear"></div>
-                </div>
-                <div id="ls-transit-dlr" style="font-size: 24px;">Loading...</div>
+            <div class="ls-box">
+                <div class="ls-box-head">DLR <span class="ls-tag bg-black">Arsenal</span><div class="clear"></div></div>
+                <div id="ls-transit-dlr">Loading...</div>
             </div>
-            
-            <div class="eink-border p-4">
-                <div class="eink-border-b pb-2 mb-4">
-                    <span class="font-bold text-2xl uppercase">Elizabeth</span>
-                    <span class="font-bold text-sm bg-gray border eink-border float-right px-2 py-2 mt-2">Westbound</span>
-                    <div class="clear"></div>
-                </div>
-                <div id="ls-transit-eliz" style="font-size: 24px;">Loading...</div>
+            <div class="ls-box">
+                <div class="ls-box-head">Elizabeth <span class="ls-tag bg-gray">Westbound</span><div class="clear"></div></div>
+                <div id="ls-transit-eliz">Loading...</div>
             </div>
-            
-            <!-- Menu button baked directly into the rotated HTML -->
             <a href="#" onclick="navigateTo('landing'); return false;" class="ls-menu-btn">MENU</a>
         </div>
     </div>
@@ -394,7 +382,7 @@
     <!-- LEGACY JAVASCRIPT -->
     <script>
         // GLOBALS
-        var APP_VERSION = 'v2.1';  // bump on every change; shown on all pages
+        var APP_VERSION = 'v2.2';  // bump on every change; shown on all pages
         var activeIntervals = [];
         var activeTimeouts = [];
         
@@ -636,6 +624,8 @@
             el.style.top = '0px';
             el.style.width = h + 'px';
             el.style.height = w + 'px';
+            // Scale all em-based landscape text to the real screen (design basis: 800px long side)
+            el.style.fontSize = Math.round(16 * h / 800 * 10) / 10 + 'px';
         }
         window.onresize = function() {
             var el = document.getElementById('page-landscape');
