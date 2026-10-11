@@ -190,6 +190,7 @@
         .ls-box .transit-row { font-size: 2.2em; margin-bottom: 0.4em; }
         .ls-box .transit-dest { width: 72%; }
         .ls-box .transit-time { width: 28%; }
+        .ls-updated { position: absolute; bottom: 0.7em; left: 1.2em; font-size: 1.1em; font-weight: bold; }
         .ls-ver { position: absolute; bottom: 0.4em; left: 0.8em; font-size: 0.8em; font-weight: bold; }
         .ls-menu-btn {
             position: absolute;
@@ -211,7 +212,7 @@
     <!-- TOP NAVIGATION -->
     <div id="nav-bar">
         <h1 id="nav-title">PORTAL</h1>
-        <span class="app-ver" style="float:right; margin:12px 15px 0 0; font-size:12px; font-weight:bold;">v2.4</span>
+        <span class="app-ver" style="float:right; margin:12px 15px 0 0; font-size:12px; font-weight:bold;">v2.5</span>
         <a id="nav-button" href="#" onclick="navigateTo('landing'); return false;">MENU</a>
         <div class="clear"></div>
     </div>
@@ -265,7 +266,7 @@
         </div>
         
         <div class="text-center mt-8 pt-8 font-bold uppercase" style="font-size: 12px;">
-            System <span class="app-ver">v2.4</span> • Ultra-Legacy Edition
+            System <span class="app-ver">v2.5</span> • Ultra-Legacy Edition
         </div>
     </div>
 
@@ -329,6 +330,7 @@
             </div>
             <div class="clear"></div>
         </div>
+        <div id="updated" class="text-center font-bold mt-4" style="font-size: 14px;">Updated --:-- &bull; every 5 min</div>
     </div>
 
     <!-- 3. DASHBOARD (LANDSCAPE) -->
@@ -347,7 +349,7 @@
                 <div class="ls-label">Right Now</div>
                 <div id="ls-weather-temp" class="ls-time">--&deg;</div>
             </div></div>
-            <div class="ls-ver app-ver">v2.4</div>
+            <div class="ls-ver app-ver">v2.5</div>
         </div>
 
         <!-- RIGHT: TWO BOXES, HALF HEIGHT EACH -->
@@ -360,6 +362,7 @@
                 <div class="ls-box-head">Elizabeth <span class="ls-tag bg-gray">Westbound</span><div class="clear"></div></div>
                 <div id="ls-transit-eliz">Loading...</div>
             </div>
+            <div class="ls-updated" id="ls-updated">Updated --:-- &bull; every 5 min</div>
             <a href="#" onclick="navigateTo('landing'); return false;" class="ls-menu-btn">MENU</a>
         </div>
     </div>
@@ -392,7 +395,8 @@
     <!-- LEGACY JAVASCRIPT -->
     <script>
         // GLOBALS
-        var APP_VERSION = 'v2.4';  // bump on every change; shown on all pages
+        var APP_VERSION = 'v2.5';  // bump on every change; shown on all pages
+        var TRANSIT_REFRESH_MS = 5 * 60 * 1000;  // transit refresh interval
         var activeIntervals = [];
         var activeTimeouts = [];
         
@@ -598,12 +602,27 @@
             }
         }
 
+        // Show when data last refreshed and how often it refreshes
+        function setLastUpdate() {
+            var n = new Date();
+            var h = n.getHours(); var m = n.getMinutes();
+            if (h < 10) h = '0' + h;
+            if (m < 10) m = '0' + m;
+            var txt = 'Updated ' + h + ':' + m + ' &bull; every ' + (TRANSIT_REFRESH_MS / 60000) + ' min';
+            var ids = ['updated', 'ls-updated'];
+            for (var i = 0; i < ids.length; i++) {
+                var el = document.getElementById(ids[i]);
+                if (el) el.innerHTML = txt;
+            }
+        }
+
         function fetchTransit() {
             // Fetch DLR
             ajaxGet('https://api.tfl.gov.uk/StopPoint/' + tflDlrId + '/Arrivals', function(data) {
                 var sorted = data.sort(function(a,b) { return a.timeToStation - b.timeToStation; });
                 drawTransit('transit-dlr', sorted, "", false);
                 drawTransit('ls-transit-dlr', sorted, "", false);
+                setLastUpdate();
             });
             
             // Fetch Elizabeth
@@ -612,6 +631,7 @@
                 drawTransit('transit-eliz-east', sorted, "Abbey Wood", false);
                 drawTransit('transit-eliz-west', sorted, "Abbey Wood", true);
                 drawTransit('ls-transit-eliz', sorted, "Abbey Wood", true);
+                setLastUpdate();
             });
         }
 
@@ -621,7 +641,7 @@
             fetchWeather();
             activeIntervals.push(setInterval(fetchWeather, 1800000));
             fetchTransit();
-            activeIntervals.push(setInterval(fetchTransit, 120000));
+            activeIntervals.push(setInterval(fetchTransit, TRANSIT_REFRESH_MS));
         }
 
         // Size/position the rotated landscape page in pixels (no vw/vh on old Kindle WebKit)
