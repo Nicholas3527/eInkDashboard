@@ -134,6 +134,7 @@
         /* ART PAGE */
         #art-img {
             max-width: 100%;
+            max-height: 480px;
             max-height: 60vh;
             filter: grayscale(100%) contrast(125%);
             margin: 0 auto;
@@ -146,9 +147,9 @@
             display: none;
             position: absolute;
             top: 0;
-            left: 100vw;
-            width: 100vh;
-            height: 100vw;
+            left: 600px;   /* real values set in JS (layoutLandscape): old Kindle WebKit lacks vw/vh */
+            width: 800px;
+            height: 600px;
             -webkit-transform: rotate(90deg);
             -webkit-transform-origin: 0 0;
             transform: rotate(90deg);
@@ -405,13 +406,13 @@
             var pages = document.querySelectorAll('.page');
             for (var i = 0; i < pages.length; i++) {
                 pages[i].style.display = 'none';
-                pages[i].classList.remove('active');
+                pages[i].className = pages[i].className.replace(/\bactive\b/g, '');
             }
             
             var target = document.getElementById('page-' + pageId);
             if (target) {
                 target.style.display = 'block';
-                target.classList.add('active');
+                target.className += ' active';
             }
             
             var nav = document.getElementById('nav-bar');
@@ -424,6 +425,7 @@
                 nav.style.display = 'none';
             } else if (pageId === 'landscape') {
                 nav.style.display = 'none';
+                layoutLandscape();
                 initLandscape();
             } else {
                 nav.style.display = 'block';
@@ -611,6 +613,22 @@
             fetchTransit();
             activeIntervals.push(setInterval(fetchTransit, 120000));
         }
+
+        // Size/position the rotated landscape page in pixels (no vw/vh on old Kindle WebKit)
+        function layoutLandscape() {
+            var el = document.getElementById('page-landscape');
+            if (!el) return;
+            var w = window.innerWidth || document.documentElement.clientWidth || 600;
+            var h = window.innerHeight || document.documentElement.clientHeight || 800;
+            el.style.left = w + 'px';
+            el.style.top = '0px';
+            el.style.width = h + 'px';
+            el.style.height = w + 'px';
+        }
+        window.onresize = function() {
+            var el = document.getElementById('page-landscape');
+            if (el && el.style.display === 'block') layoutLandscape();
+        };
 
         function initLandscape() {
             initDashboard(); // Landscape uses the exact same data functions
