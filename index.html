@@ -162,36 +162,39 @@
         #page-landscape { font-size: 16px; }
         .ls-col-left {
             float: left;
-            width: 44%;
+            width: 48%;
             height: 100%;
             border-right: 0.2em solid #000000;
             box-sizing: border-box;
-            padding: 1em 1.2em;
-            text-align: center;
             position: relative;
         }
         .ls-col-right {
             float: right;
-            width: 56%;
+            width: 52%;
             height: 100%;
             box-sizing: border-box;
-            padding: 1em 1.2em;
             position: relative;
         }
-        .ls-label { font-size: 1.5em; font-weight: bold; text-transform: uppercase; }
-        .ls-time { font-size: 7.6em; font-weight: bold; line-height: 1; }
-        .ls-date { font-size: 1.8em; font-weight: bold; margin-top: 0.2em; }
-        .ls-hk { font-size: 2em; font-weight: bold; margin-top: 0.5em; padding-top: 0.4em; border-top: 0.12em solid #000000; }
-        .ls-temp { font-size: 6em; font-weight: bold; line-height: 1; }
-        .ls-box { border: 0.2em solid #000000; padding: 0.6em 0.8em; margin-bottom: 0.8em; }
-        .ls-box-head { border-bottom: 0.15em solid #000000; padding-bottom: 0.3em; margin-bottom: 0.5em; font-size: 2em; font-weight: bold; text-transform: uppercase; }
+        /* three equal rows on the left; table-cell centres content vertically */
+        .ls-row { display: table; width: 100%; height: 33.333%; box-sizing: border-box; border-bottom: 0.12em solid #000000; }
+        .ls-row.last { border-bottom: none; }
+        .ls-cell { display: table-cell; vertical-align: middle; text-align: center; }
+        .ls-label { font-size: 2em; font-weight: bold; text-transform: uppercase; line-height: 1.2; }
+        .ls-label span { font-size: 0.8em; text-transform: none; }
+        .ls-time { font-size: 7.4em; font-weight: bold; line-height: 1; }
+        /* two equal boxes on the right, each half the column height */
+        .ls-box { height: 50%; box-sizing: border-box; border-bottom: 0.2em solid #000000; padding: 0.8em 1.2em; overflow: hidden; }
+        .ls-box.last { border-bottom: none; }
+        .ls-box-head { border-bottom: 0.15em solid #000000; padding-bottom: 0.3em; margin-bottom: 0.6em; font-size: 2.4em; font-weight: bold; text-transform: uppercase; }
         .ls-tag { float: right; font-size: 0.55em; padding: 0.2em 0.6em; margin-top: 0.3em; }
-        .ls-box .transit-row { font-size: 1.9em; margin-bottom: 0.3em; }
-        .ls-ver { position: absolute; bottom: 0.5em; left: 0.8em; font-size: 0.8em; font-weight: bold; }
+        .ls-box .transit-row { font-size: 2.2em; margin-bottom: 0.4em; }
+        .ls-box .transit-dest { width: 72%; }
+        .ls-box .transit-time { width: 28%; }
+        .ls-ver { position: absolute; bottom: 0.4em; left: 0.8em; font-size: 0.8em; font-weight: bold; }
         .ls-menu-btn {
             position: absolute;
-            bottom: 1em;
-            right: 1.2em;
+            bottom: 0.6em;
+            right: 1em;
             border: 0.15em solid #000000;
             padding: 0.4em 1em;
             font-size: 1.3em;
@@ -208,7 +211,7 @@
     <!-- TOP NAVIGATION -->
     <div id="nav-bar">
         <h1 id="nav-title">PORTAL</h1>
-        <span class="app-ver" style="float:right; margin:12px 15px 0 0; font-size:12px; font-weight:bold;">v2.2</span>
+        <span class="app-ver" style="float:right; margin:12px 15px 0 0; font-size:12px; font-weight:bold;">v2.3</span>
         <a id="nav-button" href="#" onclick="navigateTo('landing'); return false;">MENU</a>
         <div class="clear"></div>
     </div>
@@ -228,6 +231,7 @@
             <a href="#" onclick="navigateTo('landscape'); return false;" class="menu-card eink-border">
                 <h2 class="uppercase font-bold">Landscape</h2>
                 <p>Sideways Optimized</p>
+                <p style="font-size: 11px; margin: 4px 0 0 0;">Optimised for Kindle Voyage</p>
             </a>
             <a href="#" onclick="navigateTo('art'); return false;" class="menu-card eink-border">
                 <h2 class="uppercase font-bold">Digital Art</h2>
@@ -261,7 +265,7 @@
         </div>
         
         <div class="text-center mt-8 pt-8 font-bold uppercase" style="font-size: 12px;">
-            System <span class="app-ver">v2.2</span> • Ultra-Legacy Edition
+            System <span class="app-ver">v2.3</span> • Ultra-Legacy Edition
         </div>
     </div>
 
@@ -329,24 +333,30 @@
 
     <!-- 3. DASHBOARD (LANDSCAPE) -->
     <div id="page-landscape" class="page">
-        <!-- LEFT: CLOCK & WEATHER -->
+        <!-- LEFT: THREE EQUAL ROWS -->
         <div class="ls-col-left">
-            <div class="ls-label">London</div>
-            <div id="ls-london-time" class="ls-time">--:--</div>
-            <div id="ls-london-date" class="ls-date">Loading...</div>
-            <div class="ls-hk">HK <span id="ls-hk-time">--:--</span></div>
-            <div class="ls-label" style="margin-top: 0.8em;">Right Now</div>
-            <div id="ls-weather-temp" class="ls-temp">--&deg;</div>
-            <div class="ls-ver app-ver">v2.2</div>
+            <div class="ls-row"><div class="ls-cell">
+                <div class="ls-label">London <span id="ls-london-date"></span></div>
+                <div id="ls-london-time" class="ls-time">--:--</div>
+            </div></div>
+            <div class="ls-row"><div class="ls-cell">
+                <div class="ls-label">Hong Kong</div>
+                <div id="ls-hk-time" class="ls-time">--:--</div>
+            </div></div>
+            <div class="ls-row last"><div class="ls-cell">
+                <div class="ls-label">Right Now</div>
+                <div id="ls-weather-temp" class="ls-time">--&deg;</div>
+            </div></div>
+            <div class="ls-ver app-ver">v2.3</div>
         </div>
 
-        <!-- RIGHT: TRANSIT -->
+        <!-- RIGHT: TWO BOXES, HALF HEIGHT EACH -->
         <div class="ls-col-right">
             <div class="ls-box">
                 <div class="ls-box-head">DLR <span class="ls-tag bg-black">Arsenal</span><div class="clear"></div></div>
                 <div id="ls-transit-dlr">Loading...</div>
             </div>
-            <div class="ls-box">
+            <div class="ls-box last">
                 <div class="ls-box-head">Elizabeth <span class="ls-tag bg-gray">Westbound</span><div class="clear"></div></div>
                 <div id="ls-transit-eliz">Loading...</div>
             </div>
@@ -382,7 +392,7 @@
     <!-- LEGACY JAVASCRIPT -->
     <script>
         // GLOBALS
-        var APP_VERSION = 'v2.2';  // bump on every change; shown on all pages
+        var APP_VERSION = 'v2.3';  // bump on every change; shown on all pages
         var activeIntervals = [];
         var activeTimeouts = [];
         
@@ -497,7 +507,7 @@
             var elLsLonT = document.getElementById('ls-london-time');
             if(elLsLonT) elLsLonT.innerHTML = lonTimeStr;
             var elLsLonD = document.getElementById('ls-london-date');
-            if(elLsLonD) elLsLonD.innerHTML = dateStr;
+            if(elLsLonD) elLsLonD.innerHTML = dateStr.substring(0, dateStr.length - 5); // drop year to fit
             var elLsHkT = document.getElementById('ls-hk-time');
             if(elLsHkT) elLsHkT.innerHTML = hkTimeStr;
         }
