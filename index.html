@@ -141,12 +141,26 @@
             padding: 10px;
         }
 
-        /* LANDSCAPE SPECIFIC */
-        #page-landscape.active { overflow: hidden; }
+        /* LANDSCAPE SPECIFIC - FORCED CSS ROTATION */
+        #page-landscape {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 100vw;
+            width: 100vh;
+            height: 100vw;
+            -webkit-transform: rotate(90deg);
+            -webkit-transform-origin: 0 0;
+            transform: rotate(90deg);
+            transform-origin: 0 0;
+            overflow: hidden;
+            background-color: #ffffff;
+        }
+        #page-landscape.active { display: block; }
         .ls-col-left {
             float: left;
             width: 50%;
-            height: 100vh;
+            height: 100%;
             border-right: 3px solid #000000;
             box-sizing: border-box;
             padding: 20px;
@@ -154,9 +168,22 @@
         .ls-col-right {
             float: right;
             width: 50%;
-            height: 100vh;
+            height: 100%;
             box-sizing: border-box;
             padding: 20px;
+            position: relative;
+        }
+        .ls-menu-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            border: 3px solid #000000;
+            padding: 10px 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-decoration: none;
+            color: #000000;
+            background-color: #ffffff;
         }
     </style>
 </head>
@@ -323,6 +350,9 @@
                 </div>
                 <div id="ls-transit-eliz" style="font-size: 24px;">Loading...</div>
             </div>
+            
+            <!-- Menu button baked directly into the rotated HTML -->
+            <a href="#" onclick="navigateTo('landing'); return false;" class="ls-menu-btn">MENU</a>
         </div>
     </div>
 
@@ -375,44 +405,29 @@
             var pages = document.querySelectorAll('.page');
             for (var i = 0; i < pages.length; i++) {
                 pages[i].style.display = 'none';
+                pages[i].classList.remove('active');
             }
             
             var target = document.getElementById('page-' + pageId);
             if (target) {
                 target.style.display = 'block';
+                target.classList.add('active');
             }
             
             var nav = document.getElementById('nav-bar');
-            var btnMenu = document.getElementById('float-menu-btn'); // For landscape
+            
+            // Clean up old dynamically added button if it exists from previous code versions
+            var oldBtn = document.getElementById('float-menu-btn');
+            if (oldBtn) oldBtn.parentNode.removeChild(oldBtn);
             
             if (pageId === 'landing') {
                 nav.style.display = 'none';
-                if(btnMenu) btnMenu.style.display = 'none';
             } else if (pageId === 'landscape') {
                 nav.style.display = 'none';
-                // Inject floating button for landscape
-                if (!btnMenu) {
-                    btnMenu = document.createElement('a');
-                    btnMenu.id = 'float-menu-btn';
-                    btnMenu.href = '#';
-                    btnMenu.className = 'eink-border font-bold uppercase';
-                    btnMenu.style.position = 'absolute';
-                    btnMenu.style.bottom = '20px';
-                    btnMenu.style.right = '20px';
-                    btnMenu.style.padding = '10px 20px';
-                    btnMenu.style.backgroundColor = '#fff';
-                    btnMenu.style.color = '#000';
-                    btnMenu.style.textDecoration = 'none';
-                    btnMenu.innerHTML = 'MENU';
-                    btnMenu.onclick = function() { navigateTo('landing'); return false; };
-                    document.body.appendChild(btnMenu);
-                }
-                btnMenu.style.display = 'block';
                 initLandscape();
             } else {
                 nav.style.display = 'block';
                 document.getElementById('nav-title').innerHTML = pageId.toUpperCase();
-                if(btnMenu) btnMenu.style.display = 'none';
                 
                 if (pageId === 'dashboard') initDashboard();
                 if (pageId === 'art') initArt();
