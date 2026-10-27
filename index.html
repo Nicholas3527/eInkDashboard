@@ -212,7 +212,7 @@
     <!-- TOP NAVIGATION -->
     <div id="nav-bar">
         <h1 id="nav-title">PORTAL</h1>
-        <span class="app-ver" style="float:right; margin:12px 15px 0 0; font-size:12px; font-weight:bold;">v2.6</span>
+        <span class="app-ver" style="float:right; margin:12px 15px 0 0; font-size:12px; font-weight:bold;">v2.7</span>
         <a id="nav-button" href="#" onclick="navigateTo('landing'); return false;">MENU</a>
         <div class="clear"></div>
     </div>
@@ -266,7 +266,7 @@
         </div>
         
         <div class="text-center mt-8 pt-8 font-bold uppercase" style="font-size: 12px;">
-            System <span class="app-ver">v2.6</span> • Ultra-Legacy Edition
+            System <span class="app-ver">v2.7</span> • Ultra-Legacy Edition
         </div>
     </div>
 
@@ -346,10 +346,10 @@
                 <div id="ls-hk-time" class="ls-time">--:--</div>
             </div></div>
             <div class="ls-row last"><div class="ls-cell">
-                <div class="ls-label">Right Now</div>
-                <div id="ls-weather-temp" class="ls-time">--&deg;</div>
+                <div class="ls-label">Now <span id="ls-weather-text"></span></div>
+                <div class="ls-time"><span id="ls-weather-icon"></span><span id="ls-weather-temp">--&deg;</span></div>
             </div></div>
-            <div class="ls-ver app-ver">v2.6</div>
+            <div class="ls-ver app-ver">v2.7</div>
         </div>
 
         <!-- RIGHT: TWO BOXES, HALF HEIGHT EACH -->
@@ -395,7 +395,7 @@
     <!-- LEGACY JAVASCRIPT -->
     <script>
         // GLOBALS
-        var APP_VERSION = 'v2.6';  // bump on every change; shown on all pages
+        var APP_VERSION = 'v2.7';  // bump on every change; shown on all pages
         var TRANSIT_REFRESH_MS = 5 * 60 * 1000;  // transit refresh interval
         var activeIntervals = [];
         var activeTimeouts = [];
@@ -530,9 +530,55 @@
             if(elLsHkT) elLsHkT.innerHTML = hkTimeStr;
         }
 
+        // WEATHER ICONS (inline SVG, black line art for e-ink). WMO weather codes from Open-Meteo.
+        var SVG_STROKE = 'fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"';
+        var ICON_CLOUD = '<path d="M20 46h26a10 10 0 0 0 1.5-19.9A15 15 0 0 0 19 29a8.5 8.5 0 0 0 1 17z" fill="#fff" stroke="#000" stroke-width="4" stroke-linejoin="round"/>';
+        var ICON_SUN_RAYS = '<path ' + SVG_STROKE + ' d="M32 6v7M32 51v7M6 32h7M51 32h7M13.6 13.6l5 5M45.4 45.4l5 5M13.6 50.4l5-5M45.4 18.6l5-5"/>';
+
+        // Returns {kind, text} for a WMO code
+        function weatherInfo(code, isDay) {
+            if (code === 0 || code === 1) return {kind: isDay ? 'sun' : 'moon', text: isDay ? 'Sunny' : 'Clear'};
+            if (code === 2) return {kind: isDay ? 'partly' : 'cloud', text: 'Partly cloudy'};
+            if (code === 3) return {kind: 'cloud', text: 'Cloudy'};
+            if (code === 45 || code === 48) return {kind: 'fog', text: 'Fog'};
+            if (code >= 51 && code <= 57) return {kind: 'rain', text: 'Drizzle'};
+            if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return {kind: 'rain', text: code >= 80 ? 'Showers' : 'Rain'};
+            if ((code >= 71 && code <= 77) || code === 85 || code === 86) return {kind: 'snow', text: 'Snow'};
+            if (code >= 95) return {kind: 'storm', text: 'Thunderstorm'};
+            return {kind: 'cloud', text: 'Cloudy'};
+        }
+
+        // size is any CSS length, e.g. '40px' or '1em'
+        function weatherIconSvg(kind, size) {
+            var g = '';
+            if (kind === 'sun') {
+                g = '<circle cx="32" cy="32" r="11" ' + SVG_STROKE + '/>' + ICON_SUN_RAYS;
+            } else if (kind === 'moon') {
+                g = '<path ' + SVG_STROKE + ' d="M40 12a20 20 0 1 0 14 32A17 17 0 0 1 40 12z"/>';
+            } else if (kind === 'partly') {
+                g = '<circle cx="24" cy="24" r="9" ' + SVG_STROKE + '/>' +
+                    '<path ' + SVG_STROKE + ' d="M24 6v5M6 24h5M11 11l3.5 3.5M37 11l-3.5 3.5"/>' +
+                    '<g transform="translate(6 10)">' + ICON_CLOUD + '</g>';
+            } else if (kind === 'cloud') {
+                g = '<g transform="translate(0 4)">' + ICON_CLOUD + '</g>';
+            } else if (kind === 'fog') {
+                g = '<path ' + SVG_STROKE + ' d="M10 22h44M6 34h44M14 46h40"/>';
+            } else if (kind === 'rain') {
+                g = '<g transform="translate(0 -8)">' + ICON_CLOUD + '</g>' +
+                    '<path ' + SVG_STROKE + ' d="M22 46l-4 9M33 46l-4 9M44 46l-4 9"/>';
+            } else if (kind === 'snow') {
+                g = '<g transform="translate(0 -8)">' + ICON_CLOUD + '</g>' +
+                    '<circle cx="22" cy="50" r="2.5" fill="#000"/><circle cx="33" cy="56" r="2.5" fill="#000"/><circle cx="44" cy="50" r="2.5" fill="#000"/>';
+            } else if (kind === 'storm') {
+                g = '<g transform="translate(0 -8)">' + ICON_CLOUD + '</g>' +
+                    '<path d="M35 38l-9 12h8l-4 10 12-14h-8z" fill="#000" stroke="#000" stroke-width="2" stroke-linejoin="round"/>';
+            }
+            return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" style="width:' + size + ';height:' + size + ';vertical-align:middle;">' + g + '</svg>';
+        }
+
         // WEATHER
         function fetchWeather() {
-            ajaxGet('https://api.open-meteo.com/v1/forecast?latitude=51.5085&longitude=-0.1257&hourly=temperature_2m&timezone=Europe%2FLondon', function(data) {
+            ajaxGet('https://api.open-meteo.com/v1/forecast?latitude=51.5085&longitude=-0.1257&hourly=temperature_2m,weather_code,is_day&timezone=Europe%2FLondon', function(data) {
                 if(!data || !data.hourly) return;
                 
                 var hHtml = '';
@@ -547,15 +593,22 @@
                     for(var x=0; x < data.hourly.time.length; x++) {
                         if(data.hourly.time[x] === key) {
                             var temp = Math.round(data.hourly.temperature_2m[x]);
+                            var wx = weatherInfo(data.hourly.weather_code ? data.hourly.weather_code[x] : -1,
+                                                 data.hourly.is_day ? data.hourly.is_day[x] === 1 : true);
                             hHtml += '<div style="float:left; width:33%; text-align:center;">';
                             hHtml += '<div class="font-bold">' + targetH + ':00</div>';
-                            hHtml += '<div class="font-bold" style="font-size:24px; margin-top:10px;">' + temp + '\u00b0</div>';
+                            hHtml += '<div style="margin-top:6px;">' + weatherIconSvg(wx.kind, '40px') + '</div>';
+                            hHtml += '<div class="font-bold" style="font-size:24px; margin-top:4px;">' + temp + '\u00b0</div>';
                             hHtml += '</div>';
 
                             // Update landscape big temp on first pass
                             if (i === 0) {
                                 var lsT = document.getElementById('ls-weather-temp');
                                 if(lsT) lsT.innerHTML = temp + '\u00b0';
+                                var lsI = document.getElementById('ls-weather-icon');
+                                if(lsI) lsI.innerHTML = weatherIconSvg(wx.kind, '0.9em');
+                                var lsW = document.getElementById('ls-weather-text');
+                                if(lsW) lsW.innerHTML = wx.text;
                             }
                             break;
                         }
